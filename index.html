@@ -86,6 +86,11 @@
         .card { background: var(--card); padding: 15px; border-radius: 18px; border: 1px solid var(--border); }
         input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--input-text); font-size: 13px; margin-top: 4px; outline: none; box-sizing: border-box; }
         
+        /* Ergänzung für Foto-Übersetzung */
+        .file-input-container { position: relative; margin-top: 4px; }
+        #foto { opacity: 0; position: absolute; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
+        .file-label-custom { display: block; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); text-align: center; font-size: 12px; }
+
         label { font-size: 9px; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-top: 8px; }
         .btn-save { background: var(--p-strom); color: white; width: 100%; padding: 12px; margin-top: 10px; font-size: 13px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; }
 
@@ -144,7 +149,10 @@
             <label id="l-dateLabel">Datum</label>
             <input type="date" id="manuellesDatum">
             <label id="l-photoLabel">Foto / Galerie</label>
-            <input type="file" id="foto" accept="image/*">
+            <div class="file-input-container">
+                <input type="file" id="foto" accept="image/*" onchange="handleFileSelect(this)">
+                <div class="file-label-custom" id="l-fileLabel">📸 Datei auswählen...</div>
+            </div>
             <input type="hidden" id="editId">
             <button class="btn-save" onclick="saveData()" id="l-saveBtn">✅ Speichern</button>
         </div>
@@ -182,14 +190,16 @@
             dateLabel: "Datum 📅", photoLabel: "Foto / Galerie 📸", saveBtn: "✅ Speichern", updateBtn: "🔄 Änderung übernehmen", 
             compareTitle: "📊 Stand-Vergleich", filterType: "Filter", all: "Alle", allYears: "Alle Jahre", 
             strom: "Strom", gas: "Gas", wasser: "Wasser", pv: "Photovoltaik", alertMiss: "Stand fehlt!", 
-            histTitle: "📂 Verzeichnis / History", confirmDel: "Eintrag wirklich löschen?", vs: "vs. Vorperiode" 
+            histTitle: "📂 Verzeichnis / History", confirmDel: "Eintrag wirklich löschen?", vs: "vs. Vorperiode",
+            fileSelect: "📸 Datei auswählen..."
         },
         IT: { 
             dashboard: "📊 Dashboard", newEntry: "✨ Nuovo valore", typeLabel: "Tipo contatore 📝", standLabel: "Lettura 📊", 
             dateLabel: "Data 📅", photoLabel: "Foto / Galleria 📸", saveBtn: "✅ Salva", updateBtn: "🔄 Applica Modifica", 
             compareTitle: "📊 Confronto", filterType: "Filtro", all: "Tutti", allYears: "Tutti", 
             strom: "Elettricità", gas: "Gas", wasser: "Acqua", pv: "Fotovoltaico", alertMiss: "Manca lettura!", 
-            histTitle: "📂 Cronologia", confirmDel: "Eliminare record?", vs: "rispetto al precedente" 
+            histTitle: "📂 Cronologia", confirmDel: "Eliminare record?", vs: "rispetto al precedente",
+            fileSelect: "📸 Seleziona file..."
         }
     };
     const iconMap = { "Strom": "⚡", "Gas": "🔥", "Wasser": "💧", "Photovoltaik": "☀️" }, units = { "Strom": "kWh", "Gas": "m³", "Wasser": "m³", "Photovoltaik": "kWh" };
@@ -202,6 +212,11 @@
     }
     function toggleLight() { document.body.classList.toggle('light-mode'); render(); }
     function setFilter(c, v) { if(c === 'type') filterType = v; else filterYear = v; render(); }
+
+    function handleFileSelect(input) {
+        const label = document.getElementById('l-fileLabel');
+        label.innerText = input.files.length > 0 ? input.files[0].name : translations[currentLang].fileSelect;
+    }
 
     function formatDate(d) {
         if (!d) return "--";
@@ -223,6 +238,95 @@
         document.getElementById('l-saveBtn').innerText = "...";
         await fetch(CLOUD_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
         setTimeout(() => { location.reload(); }, 1000);
+    }
+
+    function render() {
+        const t = translations[currentLang];
+        
+        document.getElementById('l-dashboard').innerText = t.dashboard;
+        document.getElementById('l-newEntry').innerText = t.newEntry;
+        document.getElementById('l-typeLabel').innerText = t.typeLabel;
+        document.getElementById('l-standLabel').innerText = t.standLabel;
+        document.getElementById('l-dateLabel').innerText = t.dateLabel;
+        document.getElementById('l-photoLabel').innerText = t.photoLabel;
+        document.getElementById('l-saveBtn').innerText = document.getElementById('editId').value ? t.updateBtn : t.saveBtn;
+        document.getElementById('l-compareTitle').innerText = t.compareTitle;
+        document.getElementById('l-histTitle').innerText = t.histTitle;
+        document.getElementById('l-filterType').innerText = t.filterType;
+        document.getElementById('l-fileLabel').innerText = document.getElementById('foto').files.length > 0 ? document.getElementById('foto').files[0].name : t.fileSelect;
+
+        document.getElementById('typ').innerHTML = `
+            <option value="Strom">${iconMap.Strom} ${t.strom}</option>
+            <option value="Gas">${iconMap.Gas} ${t.gas}</option>
+            <option value="Wasser">${iconMap.Wasser} ${t.wasser}</option>
+            <option value="Photovoltaik">${iconMap.Photovoltaik} ${t.pv}</option>`;
+        
+        const filterBar = document.getElementById('typeFilters');
+        filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="setFilter('type', 'Alle')">${t.all}</button>` +
+            ["Strom", "Gas", "Wasser", "Photovoltaik"].map(x => `<button class="filter-btn ${filterType === x ? 'active' : ''}" onclick="setFilter('type', '${x}')">${iconMap[x]} ${t[x.toLowerCase() === 'photovoltaik' ? 'pv' : x.toLowerCase()]}</button>`).join('');
+        
+        const years = [...new Set(dataCache.map(d => d.jahr))].sort((a,b) => b-a);
+        const yS = document.getElementById('yearSelect'); yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
+        years.forEach(y => { yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; });
+
+        const types = ["Strom", "Gas", "Wasser", "Photovoltaik"];
+        const curStands = [], prevStands = [], barColors = [], chartLabels = [];
+        let statsHtml = "";
+
+        types.forEach(tk => {
+            const lastEntry = dataCache.filter(d => d.typ === tk).pop();
+            const s25 = lastEntry ? lastEntry.stand : 0;
+            const s24 = dataCache.filter(d => d.typ === tk && d.jahr === 2024).pop()?.stand || 0;
+            const cons = lastEntry && lastEntry.vergleich ? lastEntry.vergleich : 0;
+            const labelText = t[tk.toLowerCase() === 'photovoltaik' ? 'pv' : tk.toLowerCase()];
+
+            curStands.push(s25); 
+            prevStands.push(s24);
+            barColors.push(cons > 0 ? '#ef4444' : '#10b981');
+            chartLabels.push(iconMap[tk] + " " + labelText);
+
+            statsHtml += `
+                <div class="stat-item">
+                    <span style="font-size:9px;">${iconMap[tk]} ${labelText}</span>
+                    <span class="stat-val" style="color:${cons > 0 ? 'var(--up)' : 'var(--down)'}">
+                        ${cons > 0 ? '+' : ''}${cons.toFixed(1)} ${units[tk]}
+                    </span>
+                    <small style="font-size:8px; color:var(--muted)">${t.vs}</small>
+                </div>`;
+        });
+        document.getElementById('yearStats').innerHTML = statsHtml;
+
+        const hist = document.getElementById('history'); hist.innerHTML = "";
+        let fil = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear));
+        [...fil].reverse().forEach(e => {
+            hist.innerHTML += `<div class="entry">
+                <div class="entry-icon-wrap">${iconMap[e.typ]}</div>
+                <div class="entry-main"><b>${t[e.typ.toLowerCase() === 'photovoltaik' ? 'pv' : e.typ.toLowerCase()]}</b><br><small>${formatDate(e.datum)}</small></div>
+                <div class="entry-right">
+                    <div class="entry-val">${e.stand.toLocaleString()} ${units[e.typ]}</div>
+                    ${e.img ? `<img src="${e.img}" class="img-preview" onclick="const w=window.open(); w.document.write('<img src=${e.img} style=width:100%>')">` : ''}
+                    <button class="btn-action btn-edit" onclick="editEntry(${e.id})">✏️</button>
+                    <button class="btn-action btn-delete" onclick="deleteEntry(${e.id})">🗑️</button>
+                </div>
+            </div>`;
+        });
+
+        if(window.ch) window.ch.destroy();
+        window.ch = new Chart(document.getElementById('myChart'), {
+            type: 'bar', 
+            data: { 
+                labels: chartLabels, 
+                datasets: [
+                    { label: "2024", data: prevStands, backgroundColor: '#475569' }, 
+                    { label: "2025", data: curStands, backgroundColor: barColors }
+                ] 
+            },
+            options: { 
+                maintainAspectRatio: false, 
+                plugins: { legend: { display: false } },
+                scales: { x: { ticks: { font: { size: 10 } } } }
+            }
+        });
     }
 
     async function exportPDF() {
@@ -261,101 +365,6 @@
         setTimeout(() => { location.reload(); }, 800);
     }
 
-    function render() {
-        const t = translations[currentLang];
-        
-        // Texte übersetzen
-        document.getElementById('l-dashboard').innerText = t.dashboard;
-        document.getElementById('l-newEntry').innerText = t.newEntry;
-        document.getElementById('l-typeLabel').innerText = t.typeLabel;
-        document.getElementById('l-standLabel').innerText = t.standLabel;
-        document.getElementById('l-dateLabel').innerText = t.dateLabel;
-        document.getElementById('l-photoLabel').innerText = t.photoLabel;
-        document.getElementById('l-saveBtn').innerText = document.getElementById('editId').value ? t.updateBtn : t.saveBtn;
-        document.getElementById('l-compareTitle').innerText = t.compareTitle;
-        document.getElementById('l-histTitle').innerText = t.histTitle;
-        document.getElementById('l-filterType').innerText = t.filterType;
-
-        // Select Optionen übersetzen
-        document.getElementById('typ').innerHTML = `
-            <option value="Strom">${iconMap.Strom} ${t.strom}</option>
-            <option value="Gas">${iconMap.Gas} ${t.gas}</option>
-            <option value="Wasser">${iconMap.Wasser} ${t.wasser}</option>
-            <option value="Photovoltaik">${iconMap.Photovoltaik} ${t.pv}</option>`;
-        
-        // Filter Bar übersetzen
-        const filterBar = document.getElementById('typeFilters');
-        filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="setFilter('type', 'Alle')">${t.all}</button>` +
-            ["Strom", "Gas", "Wasser", "Photovoltaik"].map(x => `<button class="filter-btn ${filterType === x ? 'active' : ''}" onclick="setFilter('type', '${x}')">${iconMap[x]} ${t[x.toLowerCase() === 'photovoltaik' ? 'pv' : x.toLowerCase()]}</button>`).join('');
-        
-        const years = [...new Set(dataCache.map(d => d.jahr))].sort((a,b) => b-a);
-        const yS = document.getElementById('yearSelect'); yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
-        years.forEach(y => { yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; });
-
-        // Stats & Charts
-        const types = ["Strom", "Gas", "Wasser", "Photovoltaik"];
-        const curStands = [], prevStands = [], barColors = [], chartLabels = [];
-        let statsHtml = "";
-
-        types.forEach(tk => {
-            const lastEntry = dataCache.filter(d => d.typ === tk).pop();
-            const s25 = lastEntry ? lastEntry.stand : 0;
-            const s24 = dataCache.filter(d => d.typ === tk && d.jahr === 2024).pop()?.stand || 0;
-            const cons = lastEntry && lastEntry.vergleich ? lastEntry.vergleich : 0;
-            const labelText = t[tk.toLowerCase() === 'photovoltaik' ? 'pv' : tk.toLowerCase()];
-
-            curStands.push(s25); 
-            prevStands.push(s24);
-            barColors.push(cons > 0 ? '#ef4444' : '#10b981');
-            chartLabels.push(iconMap[tk] + " " + labelText);
-
-            statsHtml += `
-                <div class="stat-item">
-                    <span style="font-size:9px;">${iconMap[tk]} ${labelText}</span>
-                    <span class="stat-val" style="color:${cons > 0 ? 'var(--up)' : 'var(--down)'}">
-                        ${cons > 0 ? '+' : ''}${cons.toFixed(1)} ${units[tk]}
-                    </span>
-                    <small style="font-size:8px; color:var(--muted)">${t.vs}</small>
-                </div>`;
-        });
-        document.getElementById('yearStats').innerHTML = statsHtml;
-
-        // Historie
-        const hist = document.getElementById('history'); hist.innerHTML = "";
-        let fil = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear));
-        [...fil].reverse().forEach(e => {
-            hist.innerHTML += `<div class="entry">
-                <div class="entry-icon-wrap">${iconMap[e.typ]}</div>
-                <div class="entry-main"><b>${t[e.typ.toLowerCase() === 'photovoltaik' ? 'pv' : e.typ.toLowerCase()]}</b><br><small>${formatDate(e.datum)}</small></div>
-                <div class="entry-right">
-                    <div class="entry-val">${e.stand.toLocaleString()} ${units[e.typ]}</div>
-                    ${e.img ? `<img src="${e.img}" class="img-preview" onclick="const w=window.open(); w.document.write('<img src=${e.img} style=width:100%>')">` : ''}
-                    <button class="btn-action btn-edit" onclick="editEntry(${e.id})">✏️</button>
-                    <button class="btn-action btn-delete" onclick="deleteEntry(${e.id})">🗑️</button>
-                </div>
-            </div>`;
-        });
-
-        // Diagramm Korrektur: Nutzt jetzt chartLabels inkl. Symbole
-        if(window.ch) window.ch.destroy();
-        window.ch = new Chart(document.getElementById('myChart'), {
-            type: 'bar', 
-            data: { 
-                labels: chartLabels, 
-                datasets: [
-                    { label: "2024", data: prevStands, backgroundColor: '#475569' }, 
-                    { label: "2025", data: curStands, backgroundColor: barColors }
-                ] 
-            },
-            options: { 
-                maintainAspectRatio: false, 
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { ticks: { font: { size: 10 } } }
-                }
-            }
-        });
-    }
     window.onload = loadFromCloud;
 </script>
 </body>
