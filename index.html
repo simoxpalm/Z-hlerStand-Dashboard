@@ -294,7 +294,7 @@
 
         // Stats & Charts
         const types = ["Strom", "Gas", "Wasser", "Photovoltaik"];
-        const curStands = [], prevStands = [], barColors = [];
+        const curStands = [], prevStands = [], barColors = [], chartLabels = [];
         let statsHtml = "";
 
         types.forEach(tk => {
@@ -302,14 +302,16 @@
             const s25 = lastEntry ? lastEntry.stand : 0;
             const s24 = dataCache.filter(d => d.typ === tk && d.jahr === 2024).pop()?.stand || 0;
             const cons = lastEntry && lastEntry.vergleich ? lastEntry.vergleich : 0;
+            const labelText = t[tk.toLowerCase() === 'photovoltaik' ? 'pv' : tk.toLowerCase()];
 
             curStands.push(s25); 
             prevStands.push(s24);
             barColors.push(cons > 0 ? '#ef4444' : '#10b981');
+            chartLabels.push(iconMap[tk] + " " + labelText);
 
             statsHtml += `
                 <div class="stat-item">
-                    <span style="font-size:9px;">${iconMap[tk]} ${t[tk.toLowerCase() === 'photovoltaik' ? 'pv' : tk.toLowerCase()]}</span>
+                    <span style="font-size:9px;">${iconMap[tk]} ${labelText}</span>
                     <span class="stat-val" style="color:${cons > 0 ? 'var(--up)' : 'var(--down)'}">
                         ${cons > 0 ? '+' : ''}${cons.toFixed(1)} ${units[tk]}
                     </span>
@@ -334,10 +336,24 @@
             </div>`;
         });
 
+        // Diagramm Korrektur: Nutzt jetzt chartLabels inkl. Symbole
         if(window.ch) window.ch.destroy();
         window.ch = new Chart(document.getElementById('myChart'), {
-            type: 'bar', data: { labels: types.map(x => t[x.toLowerCase() === 'photovoltaik' ? 'pv' : x.toLowerCase()]), datasets: [{ label: "2024", data: prevStands, backgroundColor: '#475569' }, { label: "2025", data: curStands, backgroundColor: barColors }] },
-            options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            type: 'bar', 
+            data: { 
+                labels: chartLabels, 
+                datasets: [
+                    { label: "2024", data: prevStands, backgroundColor: '#475569' }, 
+                    { label: "2025", data: curStands, backgroundColor: barColors }
+                ] 
+            },
+            options: { 
+                maintainAspectRatio: false, 
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { font: { size: 10 } } }
+                }
+            }
         });
     }
     window.onload = loadFromCloud;
