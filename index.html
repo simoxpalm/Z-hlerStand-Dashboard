@@ -60,7 +60,8 @@
         .card { background: var(--card); padding: 15px; border-radius: 18px; border: 1px solid var(--border); box-sizing: border-box; }
         
         input, select { 
-            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--input-text); font-size: 14px; margin-top: 4px; outline: none; box-sizing: border-box; -webkit-appearance: none; color-scheme: var(--scheme);
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--input-text); font-size: 14px; margin-top: 4px; outline: none; box-sizing: border-box; 
+            appearance: none; -webkit-appearance: none; color-scheme: var(--scheme);
         }
 
         .select-wrapper { position: relative; }
@@ -84,16 +85,16 @@
         .stat-val { font-weight: 800; font-size: 13px; display: block; margin-top: 4px; }
         .stat-unit { font-size: 9px; opacity: 0.7; margin-left: 2px; }
         
-        /* History Layout Update */
+        /* History Layout Update: Icons nebeneinander */
         .entry { background: var(--card); padding: 10px 12px; border-radius: 15px; margin-bottom: 8px; display: flex; align-items: center; border: 1px solid var(--border); gap: 12px; }
-        .entry-icon-wrap { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: rgba(128,128,128,0.1); flex-shrink: 0; }
-        .entry-content { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .entry-icon-wrap { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: rgba(128,128,128,0.1); flex-shrink: 0; }
+        .entry-content { flex: 1; display: flex; align-items: center; gap: 12px; min-width: 0; }
         .entry-info { flex: 1; min-width: 0; }
         .entry-info b { font-size: 14px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .entry-info small { font-size: 10px; color: var(--muted); display: block; }
         
-        .entry-right { display: flex; align-items: center; gap: 6px; }
-        .img-preview { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; flex-shrink: 0; }
+        .entry-right { display: flex; align-items: center; gap: 8px; }
+        .img-preview { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; flex-shrink: 0; }
         .btn-action { width: 34px; height: 34px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .btn-edit { background: #64748b; }
         .btn-delete { background: #ef4444; }
@@ -325,15 +326,23 @@
     async function exportPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.text("Report", 14, 20);
-        doc.autoTable({ head: [['Datum', 'Typ', 'Stand']], body: dataCache.map(e => [formatDate(e.datum), e.typ, `${e.stand} ${units[e.typ]}`]) });
+        doc.text("Zähler Report", 14, 20);
+        doc.autoTable({ 
+            head: [['Datum', 'Typ', 'Stand']], 
+            body: dataCache.map(e => [formatDate(e.datum), e.typ, `${e.stand} ${units[e.typ]}`]) 
+        });
         doc.save("Zaehler_Report.pdf");
     }
 
     function exportExcel() {
-        const exportData = dataCache.map(e => ({ ...e, Stand: `${e.stand} ${units[e.typ]}` }));
+        const exportData = dataCache.map(e => ({ 
+            Datum: formatDate(e.datum), 
+            Typ: e.typ, 
+            Stand: `${e.stand} ${units[e.typ]}` 
+        }));
         const ws = XLSX.utils.json_to_sheet(exportData);
-        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Daten");
+        const wb = XLSX.utils.book_new(); 
+        XLSX.utils.book_append_sheet(wb, ws, "Daten");
         XLSX.writeFile(wb, "Zaehler_Export.xlsx");
     }
 
