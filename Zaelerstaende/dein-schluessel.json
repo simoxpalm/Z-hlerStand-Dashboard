@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "zaehler-check",
+  "private_key_id": "98ad6494feb17656192d327b4978f0da4152c98e",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCa2CxHKWKDgNoU\ng6R6qBk+xkZkogc8TJFExLEO3D/geLDFM7HS/dVUcEvE8b+0k2ObLh3KLQHF+6PK\nJQXnhUFuvuLniTQerF1eCraSVcA+HO3tPBoRif+rEosBdSej8sHHIFA2jB85ICVl\nqmLcn8JTcovBYIhkHGgO2/PtAZYGGJva8fk3uIS5AanNy9p346F6ZXwrUWmAtXin\nP+I6UOYWKaIv7y+uf0qBfgsSQA97WzXBIJ7V0/XiB9LkMw5Md7VJ4bOoy7FTE5NM\nCCk9w/ViZjxtN0Zru78Bc4BjREiEHVRGQU30pbvw0KCGtONkuESczwU7TzFX3Ejm\n3HN+sJ+LAgMBAAECggEABdcxlF2TQbKSh0OP6LB+g0enUBRsgXHB6P4iT5UvM6BZ\nypZwlqzMZyr1MLCNspn8n9XVedLIxlb/jphm6Jy2Ix9AH8ulE6McwndU+6AQaEdf\nEhu6P/8cja9dXui0XhLCDGjDncsbQmRcBMGwiPHdupgPfXPOsTgBFM5nHQF6TzB/\navWU9nBztM0axJvc279x2Icp0A1qembb2jsjlTct7+Dyf59odc++w890/76IwlNp\nHQp1fNy8jBJQD+9Ke80YxDSUXbwQD/y9S5g9bDm+9WPXPc7Zpqh64xEAk3YJOgL+\nuZCWXkerY+JXvTtsJlRwYuqwCuGzeFzXgQFmOAAYgQKBgQDKG1jEH57NQbeon+Fz\nRebXTvLqykkaqfitgtbcLCELUYP3oPKMaEtTNZYniKhyFtpkLMZNl/Oo5qI/g1l/\ngUAqmARn1WVMlIv5AkF/UuVEO74MBwAMG9uYfcMvQdBw677RX50HpbxmhvIW+5Ty\nKfo7pMTTs4xfIM0ZwUM6qy15kwKBgQDEIn+IWqWB5jimsp0z3rGluC83/Amz7p/6\nQK7Xn7aR9aSXccrro8zCu+9C5TAAuJOEe/T7JnLLp9amM1m4udzDuZh5Jwgs0RZh\n6sGWZmY7mLJ6yqjJEYTblYMzq/PFXRwoH+DCsog6iMH+Zyw59EK5gGulxONNcdlY\nyzNmP2OdKQKBgEMbm3jbyv36oUITfGerQUAizdQaQPXilFkAxdkrqfk5IumZfpAS\nnVhOxcHwxYXEgtWabGodV2Gw2xTdx1zoDOdXvLbBi7ZG6MdQ8XCWlNv4Pl1+AY0D\nvwG+WI4be1vTW3PoHJsKdClTC5WICefy+kzNpDFrP+PiX1f67RjQ9/OTAoGBALyA\nE2XvCKZBpyy++UsCumV1ERyTRJgDvQj85Y0iWIsLNLbAjK/P61k02gzGzE3FFzH7\nGEXQe/+zPR7at15McxpA44N8ueSoxwQwZQGxRIv+g3p0D6e/CJsppMEif9StWgRO\nLuuwPjFTgm6Ipf7E/OPfwpW9FmA2DRfDo5CfV5ORAoGBAIpsdQO3puSJ0eoHzeOu\ne9yzvwA2zqblV1I/RxhDcYmol60zD6CclR7txCAItyEvyL5IAs8DxBgb+UwWTswP\nPonb1DoKj/SdVm5osSyRoSWw43BZKYzz46YGUXUi5wzXDVL2Hq6bLueZc7LiH/Bh\nKm0vdi8V+1U4yfgcig94dN0a\n-----END PRIVATE KEY-----\n",
+  "client_email": "mein-python-bot@zaehler-check.iam.gserviceaccount.com",
+  "client_id": "100998313384777360310",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/mein-python-bot%40zaehler-check.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zähler Dashboard Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --bg: #020617; --card: #1e293b; --text: #f8fafc; --muted: #94a3b8; --border: #334155;
+            --p-strom: #3b82f6; --p-gas: #ef4444; --p-wasser: #0ea5e9; --p-pv: #f59e0b;
+            --up: #ef4444; --down: #10b981;
+            --input-text: #ffffff;
+        }
+        body.light-mode {
+            --bg: #f1f5f9; --card: #ffffff; --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
+            --input-text: #0f172a;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; font-size: 13px; transition: 0.2s; }
+        .container { max-width: 950px; margin: 0 auto; }
+        
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 25px; 
+            padding-bottom: 15px; 
+            border-bottom: 1px solid var(--border); 
+            gap: 10px;
+        }
+        .header-left { flex: 1; display: flex; flex-direction: column; align-items: flex-start; }
+        .header-center { flex: 1; display: flex; justify-content: center; }
+        .header-right { flex: 1; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        
+        .addr h2 { margin: 0; font-size: 18px; font-weight: 800; color: var(--text); }
+        .addr-text { color: var(--muted); font-size: 11px; display: flex; flex-direction: column; line-height: 1.4; margin-top: 10px; }
+
+        .logo-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .logo-img { max-height: 50px; width: auto; border-radius: 8px; }
+        .logo-text { font-size: 14px; font-weight: 800; letter-spacing: 2px; margin-top: 5px; color: var(--text); text-transform: uppercase; }
+
+        .filter-bar { 
+            display: flex; 
+            gap: 8px; 
+            overflow-x: auto; 
+            padding: 4px 2px; 
+            margin-top: 10px;
+            scrollbar-width: none;
+        }
+        .filter-btn { 
+            padding: 8px 16px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--muted); 
+            font-size: 11px; 
+            font-weight: 600;
+            cursor: pointer; 
+            white-space: nowrap;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--muted);
+            transform: translateY(-1px);
+        }
+        .filter-btn.active { 
+            background: var(--p-strom); 
+            color: white; 
+            border-color: var(--p-strom); 
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 15px; margin-bottom: 20px; }
+        @media (max-width: 800px) { 
+            .grid { grid-template-columns: 1fr; } 
+            header { flex-direction: column; }
+        }
+        
+        .card { background: var(--card); padding: 15px; border-radius: 18px; border: 1px solid var(--border); }
+        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--input-text); font-size: 13px; margin-top: 4px; outline: none; box-sizing: border-box; }
+        
+        label { font-size: 9px; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-top: 8px; }
+        .btn-save { background: var(--p-strom); color: white; width: 100%; padding: 12px; margin-top: 10px; font-size: 13px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .stat-item { padding: 10px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); }
+        .stat-val { font-weight: 800; font-size: 15px; display: block; }
+        
+        .img-preview { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; cursor: pointer; border: 1px solid var(--border); }
+        .entry { background: var(--card); padding: 12px 15px; border-radius: 15px; margin-bottom: 8px; display: flex; align-items: center; border: 1px solid var(--border); }
+        .entry-icon-wrap { width: 35px; height: 35px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 12px; background: rgba(128,128,128,0.1); }
+        .entry-main { flex: 1; color: var(--text); }
+        .entry-right { display: flex; align-items: center; gap: 12px; }
+        
+        .btn-lang { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 11px; font-weight: 700; }
+        .btn-lang.active { background: var(--p-strom); color: white; border-color: var(--p-strom); }
+        .btn-mode { padding: 6px 10px; border-radius: 6px; background: var(--card); border: 1px solid var(--border); color: var(--text); cursor: pointer; font-size: 10px; font-weight: 600; }
+        .btn-action { padding: 8px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; color: white; }
+        .btn-edit { background: #64748b; }
+        .btn-delete { background: #ef4444; }
+    </style>
+</head>
+<body class="dark-mode">
+<div class="container">
+    <header>
+        <div class="header-left">
+            <div class="addr">
+                <h2 id="l-dashboard">📊 Dashboard</h2>
+                <div class="addr-text">
+                    <span>📍 Beim Steinbrunnen 9</span>
+                    <span>73340 Hofstett-Emerbuch / Amstetten</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="logo-container">
+                <img src="logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none';">
+                <span class="logo-text">SimoxPalm</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div style="display:flex; gap:5px; margin-bottom:5px;">
+                <button class="btn-lang" id="btn-de" onclick="setLang('DE')">🇩🇪 DE</button>
+                <button class="btn-lang" id="btn-it" onclick="setLang('IT')">🇮🇹 IT</button>
+            </div>
+            <button class="btn-mode" onclick="toggleLight()">🌓 Modus</button>
+        </div>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <h3 id="l-newEntry">✨ Neuer Wert</h3>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div><label id="l-typeLabel">Zählertyp</label><select id="typ"></select></div>
+                <div><label id="l-standLabel">Zählerstand</label><input type="number" id="stand" step="0.01" placeholder="0,00"></div>
+            </div>
+            <label id="l-dateLabel">Datum</label>
+            <input type="date" id="manuellesDatum">
+            <label id="l-photoLabel">Foto</label><input type="file" id="foto" accept="image/*" capture="environment">
+            <input type="hidden" id="editId">
+            <button class="btn-save" onclick="saveData()" id="l-saveBtn">✅ Speichern</button>
+        </div>
+        <div class="card">
+            <h3 id="l-compareTitle">📊 Stand-Vergleich</h3>
+            <div class="stats-grid" id="yearStats"></div>
+            <div style="margin-top:15px; height: 160px;"><canvas id="myChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="history-controls" style="margin-top: 30px; border-top: 1px solid var(--border); padding-top:15px;">
+        <div class="history-title" id="l-histTitle" style="font-weight:700; margin-bottom:10px;">📂 Verzeichnis / History</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px;">
+            <div style="flex: 1; min-width: 250px;">
+                <label id="l-filterType">Filter</label>
+                <div id="typeFilters" class="filter-bar"></div>
+                <select id="yearSelect" onchange="setFilter('year', this.value)" style="width: 150px; margin-top: 10px;"></select>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="exportPDF()" style="background:#ef4444; border:none; padding:10px 15px; border-radius:8px; color:white; font-weight:700; cursor:pointer;">📄 PDF</button>
+                <button onclick="exportExcel()" style="background:#10b981; border:none; padding:10px 15px; border-radius:8px; color:white; font-weight:700; cursor:pointer;">📉 Excel</button>
+            </div>
+        </div>
+    </div>
+    <div id="history" style="margin-top:15px;"></div>
+</div>
+
+<script>
+    const CLOUD_URL = "https://script.google.com/macros/s/AKfycby4Yl3Mvd_IjbZxzCrQHyqJS53tIz_d2HWriOx4Kg4EW1oT62xdRGRYaLcxOZPrqQtV/exec";
+    let dataCache = [], filterType = "Alle", filterYear = "Alle", currentLang = "DE";
+
+    const translations = {
+        DE: { dashboard: "📊 Dashboard", newEntry: "✨ Neuer Wert", typeLabel: "Zählertyp 📝", standLabel: "Zählerstand 📊", dateLabel: "Datum 📅", photoLabel: "Foto 📸", saveBtn: "✅ Speichern", updateBtn: "🔄 Änderung übernehmen", compareTitle: "📊 Stand-Vergleich", filterType: "Filter", all: "Alle", allYears: "Alle Jahre", strom: "Strom", gas: "Gas", wasser: "Wasser", pv: "Photovoltaik", alertMiss: "Stand fehlt!", histTitle: "📂 Verzeichnis / History", confirmDel: "Eintrag wirklich löschen?" },
+        IT: { dashboard: "📊 Dashboard", newEntry: "✨ Nuovo valore", typeLabel: "Tipo contatore 📝", standLabel: "Lettura 📊", dateLabel: "Data 📅", photoLabel: "Foto 📸", saveBtn: "✅ Salva", updateBtn: "🔄 Applica Modifica", compareTitle: "📊 Confronto", filterType: "Filtro", all: "Tutti", allYears: "Tutti", strom: "Elettricità", gas: "Gas", wasser: "Acqua", pv: "Fotovoltaico", alertMiss: "Manca lettura!", histTitle: "📂 Cronologia", confirmDel: "Eliminare record?" }
+    };
+    const iconMap = { "Strom": "⚡", "Gas": "🔥", "Wasser": "💧", "Photovoltaik": "☀️" }, units = { "Strom": "kWh", "Gas": "m³", "Wasser": "m³", "Photovoltaik": "kWh" };
+
+    function setLang(l) { currentLang = l; render(); }
+    function toggleLight() { document.body.classList.toggle('light-mode'); render(); }
+    function setFilter(c, v) { if(c === 'type') filterType = v; else filterYear = v; render(); }
+
+    function formatDate(d) {
+        if (!d) return "--";
+        let date = new Date(d);
+        return isNaN(date.getTime()) ? d : date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    async function loadFromCloud() {
+        try { const r = await fetch(CLOUD_URL); dataCache = await r.json(); dataCache.sort((a,b) => a.ts - b.ts); render(); } catch(e) { console.error("Cloud Load Error", e); }
+    }
+
+    async function saveData() {
+        const s = document.getElementById('stand').value, t = document.getElementById('typ').value, f = document.getElementById('foto').files[0], m = document.getElementById('manuellesDatum').value, eId = document.getElementById('editId').value;
+        if(!s) return alert(translations[currentLang].alertMiss);
+        let dObj = m ? new Date(m) : new Date();
+        const img = f ? await new Promise(r => { const rd = new FileReader(); rd.onload = e => r(e.target.result); rd.readAsDataURL(f); }) : null;
+        const payload = { action: "save", id: eId ? parseInt(eId) : Date.now(), ts: dObj.getTime(), datum: dObj.toISOString(), typ: t, stand: parseFloat(s), jahr: dObj.getFullYear(), img: img };
+        
+        document.getElementById('l-saveBtn').innerText = "...";
+        await fetch(CLOUD_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        setTimeout(() => { location.reload(); }, 1000);
+    }
+
+    // --- NEU: PDF EXPORT FUNKTION ---
+    async function exportPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const t = translations[currentLang];
+        
+        doc.setFontSize(18);
+        doc.text("Zählerstand Report", 14, 20);
+        doc.setFontSize(10);
+        doc.text(`Erstellt am: ${new Date().toLocaleString()}`, 14, 28);
+        
+        const filtered = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear));
+        
+        const body = filtered.map(e => [formatDate(e.datum), e.typ, e.stand.toLocaleString() + " " + units[e.typ], e.img ? "Bild vorhanden" : "-"]);
+
+        doc.autoTable({
+            head: [['Datum', 'Typ', 'Stand', 'Foto']],
+            body: body,
+            startY: 35,
+            didDrawCell: (data) => {
+                if (data.section === 'body' && data.column.index === 3) {
+                    const entry = filtered[data.row.index];
+                    if (entry && entry.img) {
+                        try {
+                            doc.addImage(entry.img, 'JPEG', data.cell.x + 2, data.cell.y + 2, 10, 10);
+                        } catch(e) {}
+                    }
+                }
+            }
+        });
+        doc.save("Zaehler_Report.pdf");
+    }
+
+    // --- NEU: EXCEL EXPORT FUNKTION ---
+    function exportExcel() {
+        const filtered = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear))
+            .map(e => ({ Datum: formatDate(e.datum), Typ: e.typ, Stand: e.stand, Einheit: units[e.typ] }));
+        
+        const ws = XLSX.utils.json_to_sheet(filtered);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Daten");
+        XLSX.writeFile(wb, "Zaehler_Export.xlsx");
+    }
+
+    function editEntry(id) {
+        const item = dataCache.find(d => d.id == id);
+        if(!item) return;
+        document.getElementById('editId').value = item.id;
+        document.getElementById('stand').value = item.stand;
+        document.getElementById('typ').value = item.typ;
+        document.getElementById('manuellesDatum').value = new Date(item.ts).toISOString().split('T')[0];
+        document.getElementById('l-saveBtn').innerText = translations[currentLang].updateBtn;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function deleteEntry(id) {
+        if(!confirm(translations[currentLang].confirmDel)) return;
+        await fetch(CLOUD_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "delete", id: id }) });
+        setTimeout(() => { location.reload(); }, 800);
+    }
+
+    function render() {
+        const t = translations[currentLang];
+        ["dashboard","newEntry","typeLabel","standLabel","dateLabel","photoLabel","compareTitle","filterType"].forEach(id => {
+            if(document.getElementById('l-'+id)) document.getElementById('l-'+id).innerText = t[id];
+        });
+        document.getElementById('l-histTitle').innerText = t.histTitle;
+        document.getElementById('typ').innerHTML = `<option value="Strom">${iconMap.Strom} ${t.strom}</option><option value="Gas">${iconMap.Gas} ${t.gas}</option><option value="Wasser">${iconMap.Wasser} ${t.wasser}</option><option value="Photovoltaik">${iconMap.Photovoltaik} ${t.pv}</option>`;
+        
+        const filterBar = document.getElementById('typeFilters');
+        filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="setFilter('type', 'Alle')">${t.all}</button>` +
+            ["Strom", "Gas", "Wasser", "Photovoltaik"].map(x => `<button class="filter-btn ${filterType === x ? 'active' : ''}" onclick="setFilter('type', '${x}')">${iconMap[x]} ${t[x.toLowerCase() === 'photovoltaik' ? 'pv' : x.toLowerCase()]}</button>`).join('');
+        
+        const years = [...new Set(dataCache.map(d => d.jahr))].sort((a,b) => b-a);
+        const yS = document.getElementById('yearSelect'); yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
+        years.forEach(y => { yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; });
+
+        // Stats & Charts - NEU: Nutzt jetzt den automatischen Mehrverbrauch
+        const types = ["Strom", "Gas", "Wasser", "Photovoltaik"];
+        const curStands = [], prevStands = [], barColors = [];
+        let statsHtml = "";
+
+        types.forEach(tk => {
+            // Hol den aktuellsten Eintrag für diesen Typ
+            const lastEntry = dataCache.filter(d => d.typ === tk).pop();
+            
+            const s25 = lastEntry ? lastEntry.stand : 0;
+            const s24 = dataCache.filter(d => d.typ === tk && d.jahr === 2024).pop()?.stand || 0;
+            
+            // Hier nutzen wir den 'vergleich' Wert aus deinem neuen Google Script!
+            const cons = lastEntry && lastEntry.vergleich ? lastEntry.vergleich : 0;
+
+            curStands.push(s25); 
+            prevStands.push(s24);
+            barColors.push(cons > 0 ? '#ef4444' : '#10b981');
+
+            statsHtml += `
+                <div class="stat-item">
+                    <span style="font-size:9px;">${iconMap[tk]} ${tk}</span>
+                    <span class="stat-val" style="color:${cons > 0 ? 'var(--up)' : 'var(--down)'}">
+                        ${cons > 0 ? '+' : ''}${cons.toFixed(1)} ${units[tk]}
+                    </span>
+                    <small style="font-size:8px; color:var(--muted)">vs. Vorperiode</small>
+                </div>`;
+        });
+        document.getElementById('yearStats').innerHTML = statsHtml;
+
+        const hist = document.getElementById('history'); hist.innerHTML = "";
+        let fil = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear));
+        [...fil].reverse().forEach(e => {
+            hist.innerHTML += `<div class="entry">
+                <div class="entry-icon-wrap">${iconMap[e.typ]}</div>
+                <div class="entry-main"><b>${e.typ}</b><br><small>${formatDate(e.datum)}</small></div>
+                <div class="entry-right">
+                    <div class="entry-val">${e.stand.toLocaleString()} ${units[e.typ]}</div>
+                    ${e.img ? `<img src="${e.img}" class="img-preview" onclick="const w=window.open(); w.document.write('<img src=${e.img} style=width:100%>')">` : ''}
+                    <button class="btn-action btn-edit" onclick="editEntry(${e.id})">✏️</button>
+                    <button class="btn-action btn-delete" onclick="deleteEntry(${e.id})">🗑️</button>
+                </div>
+            </div>`;
+        });
+
+        if(window.ch) window.ch.destroy();
+        window.ch = new Chart(document.getElementById('myChart'), {
+            type: 'bar', data: { labels: types, datasets: [{ label: "2024", data: prevStands, backgroundColor: '#475569' }, { label: "2025", data: curStands, backgroundColor: barColors }] },
+            options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+    window.onload = loadFromCloud;
+</script>
+</body>
+</html>
