@@ -36,16 +36,17 @@
             gap: 10px;
         }
 
+        /* Korrektur für Mobile: Linksbündig statt mittig */
         @media (max-width: 600px) {
-            header { flex-direction: column; text-align: center; }
-            .header-center { order: 1; width: 100%; margin-bottom: 15px; }
-            .header-left { order: 2; width: 100%; align-items: center; margin-bottom: 10px; }
-            .header-right { order: 3; width: 100%; align-items: center; }
-            .addr-text { align-items: center; text-align: center; margin-top: 5px; }
+            header { flex-direction: column; text-align: left; align-items: flex-start; }
+            .header-center { order: 3; width: 100%; justify-content: flex-start; margin-top: 10px; }
+            .header-left { order: 1; width: 100%; align-items: flex-start; }
+            .header-right { order: 2; width: 100%; align-items: flex-start; margin-top: 10px; }
+            .addr-text { align-items: flex-start; text-align: left; }
             .grid { grid-template-columns: 1fr; }
         }
 
-        .header-left { flex: 1; display: flex; flex-direction: column; align-items: flex-start; }
+        .header-left { flex: 1.5; display: flex; flex-direction: column; align-items: flex-start; }
         .header-center { flex: 1; display: flex; justify-content: center; }
         .header-right { flex: 1; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
         
@@ -56,9 +57,8 @@
         .plz-line { padding-left: 1.5em; display: block; } /* Rückt PLZ unter das 'B' */
 
         .logo-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .logo-img { max-height: 50px; width: auto; border-radius: 8px; }
-        .logo-text { font-size: 14px; font-weight: 800; letter-spacing: 2px; margin-top: 5px; color: var(--text); text-transform: uppercase; }
-
+        .logo-img { max-height: 40px; width: auto; border-radius: 8px; }
+        .logo-text { font-size: 12px; font-weight: 800; letter-spacing: 1px; margin-top: 5px; color: var(--muted); text-transform: uppercase; }
         .grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 15px; margin-bottom: 20px; }
         .card { background: var(--card); padding: 15px; border-radius: 18px; border: 1px solid var(--border); box-sizing: border-box; }
         
