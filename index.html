@@ -177,19 +177,36 @@
     let dataCache = [], filterType = "Alle", filterYear = "Alle", currentLang = "DE";
 
     const translations = {
-        DE: { dashboard: "📊 Dashboard", newEntry: "✨ Neuer Wert", typeLabel: "Zählertyp 📝", standLabel: "Zählerstand 📊", dateLabel: "Datum 📅", photoLabel: "Foto 📸", saveBtn: "✅ Speichern", updateBtn: "🔄 Änderung übernehmen", compareTitle: "📊 Stand-Vergleich", filterType: "Filter", all: "Alle", allYears: "Alle Jahre", strom: "Strom", gas: "Gas", wasser: "Wasser", pv: "Photovoltaik", alertMiss: "Stand fehlt!", histTitle: "📂 Verzeichnis / History", confirmDel: "Eintrag wirklich löschen?" },
-        IT: { dashboard: "📊 Dashboard", newEntry: "✨ Nuovo valore", typeLabel: "Tipo contatore 📝", standLabel: "Lettura 📊", dateLabel: "Data 📅", photoLabel: "Foto 📸", saveBtn: "✅ Salva", updateBtn: "🔄 Applica Modifica", compareTitle: "📊 Confronto", filterType: "Filtro", all: "Tutti", allYears: "Tutti", strom: "Elettricità", gas: "Gas", wasser: "Acqua", pv: "Fotovoltaico", alertMiss: "Manca lettura!", histTitle: "📂 Cronologia", confirmDel: "Eliminare record?" }
+        DE: { 
+            dashboard: "📊 Dashboard", newEntry: "✨ Neuer Wert", typeLabel: "Zählertyp 📝", standLabel: "Zählerstand 📊", 
+            dateLabel: "Datum 📅", photoLabel: "Foto / Galerie 📸", saveBtn: "✅ Speichern", updateBtn: "🔄 Änderung übernehmen", 
+            compareTitle: "📊 Stand-Vergleich", filterType: "Filter", all: "Alle", allYears: "Alle Jahre", 
+            strom: "Strom", gas: "Gas", wasser: "Wasser", pv: "Photovoltaik", alertMiss: "Stand fehlt!", 
+            histTitle: "📂 Verzeichnis / History", confirmDel: "Eintrag wirklich löschen?", vs: "vs. Vorperiode" 
+        },
+        IT: { 
+            dashboard: "📊 Dashboard", newEntry: "✨ Nuovo valore", typeLabel: "Tipo contatore 📝", standLabel: "Lettura 📊", 
+            dateLabel: "Data 📅", photoLabel: "Foto / Galleria 📸", saveBtn: "✅ Salva", updateBtn: "🔄 Applica Modifica", 
+            compareTitle: "📊 Confronto", filterType: "Filtro", all: "Tutti", allYears: "Tutti", 
+            strom: "Elettricità", gas: "Gas", wasser: "Acqua", pv: "Fotovoltaico", alertMiss: "Manca lettura!", 
+            histTitle: "📂 Cronologia", confirmDel: "Eliminare record?", vs: "rispetto al precedente" 
+        }
     };
     const iconMap = { "Strom": "⚡", "Gas": "🔥", "Wasser": "💧", "Photovoltaik": "☀️" }, units = { "Strom": "kWh", "Gas": "m³", "Wasser": "m³", "Photovoltaik": "kWh" };
 
-    function setLang(l) { currentLang = l; render(); }
+    function setLang(l) { 
+        currentLang = l; 
+        document.getElementById('btn-de').classList.toggle('active', l === 'DE');
+        document.getElementById('btn-it').classList.toggle('active', l === 'IT');
+        render(); 
+    }
     function toggleLight() { document.body.classList.toggle('light-mode'); render(); }
     function setFilter(c, v) { if(c === 'type') filterType = v; else filterYear = v; render(); }
 
     function formatDate(d) {
         if (!d) return "--";
         let date = new Date(d);
-        return isNaN(date.getTime()) ? d : date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return isNaN(date.getTime()) ? d : date.toLocaleDateString(currentLang === 'DE' ? 'de-DE' : 'it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
     async function loadFromCloud() {
@@ -208,47 +225,22 @@
         setTimeout(() => { location.reload(); }, 1000);
     }
 
-    // --- NEU: PDF EXPORT FUNKTION ---
     async function exportPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         const t = translations[currentLang];
-        
-        doc.setFontSize(18);
-        doc.text("Zählerstand Report", 14, 20);
-        doc.setFontSize(10);
-        doc.text(`Erstellt am: ${new Date().toLocaleString()}`, 14, 28);
-        
+        doc.setFontSize(18); doc.text("Report", 14, 20);
         const filtered = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear));
-        
-        const body = filtered.map(e => [formatDate(e.datum), e.typ, e.stand.toLocaleString() + " " + units[e.typ], e.img ? "Bild vorhanden" : "-"]);
-
-        doc.autoTable({
-            head: [['Datum', 'Typ', 'Stand', 'Foto']],
-            body: body,
-            startY: 35,
-            didDrawCell: (data) => {
-                if (data.section === 'body' && data.column.index === 3) {
-                    const entry = filtered[data.row.index];
-                    if (entry && entry.img) {
-                        try {
-                            doc.addImage(entry.img, 'JPEG', data.cell.x + 2, data.cell.y + 2, 10, 10);
-                        } catch(e) {}
-                    }
-                }
-            }
-        });
+        const body = filtered.map(e => [formatDate(e.datum), e.typ, e.stand.toLocaleString() + " " + units[e.typ]]);
+        doc.autoTable({ head: [['Datum', 'Typ', 'Stand']], body: body, startY: 35 });
         doc.save("Zaehler_Report.pdf");
     }
 
-    // --- NEU: EXCEL EXPORT FUNKTION ---
     function exportExcel() {
         const filtered = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear))
-            .map(e => ({ Datum: formatDate(e.datum), Typ: e.typ, Stand: e.stand, Einheit: units[e.typ] }));
-        
+            .map(e => ({ Datum: formatDate(e.datum), Typ: e.typ, Stand: e.stand }));
         const ws = XLSX.utils.json_to_sheet(filtered);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Daten");
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Daten");
         XLSX.writeFile(wb, "Zaehler_Export.xlsx");
     }
 
@@ -271,12 +263,27 @@
 
     function render() {
         const t = translations[currentLang];
-        ["dashboard","newEntry","typeLabel","standLabel","dateLabel","photoLabel","compareTitle","filterType"].forEach(id => {
-            if(document.getElementById('l-'+id)) document.getElementById('l-'+id).innerText = t[id];
-        });
-        document.getElementById('l-histTitle').innerText = t.histTitle;
-        document.getElementById('typ').innerHTML = `<option value="Strom">${iconMap.Strom} ${t.strom}</option><option value="Gas">${iconMap.Gas} ${t.gas}</option><option value="Wasser">${iconMap.Wasser} ${t.wasser}</option><option value="Photovoltaik">${iconMap.Photovoltaik} ${t.pv}</option>`;
         
+        // Texte übersetzen
+        document.getElementById('l-dashboard').innerText = t.dashboard;
+        document.getElementById('l-newEntry').innerText = t.newEntry;
+        document.getElementById('l-typeLabel').innerText = t.typeLabel;
+        document.getElementById('l-standLabel').innerText = t.standLabel;
+        document.getElementById('l-dateLabel').innerText = t.dateLabel;
+        document.getElementById('l-photoLabel').innerText = t.photoLabel;
+        document.getElementById('l-saveBtn').innerText = document.getElementById('editId').value ? t.updateBtn : t.saveBtn;
+        document.getElementById('l-compareTitle').innerText = t.compareTitle;
+        document.getElementById('l-histTitle').innerText = t.histTitle;
+        document.getElementById('l-filterType').innerText = t.filterType;
+
+        // Select Optionen übersetzen
+        document.getElementById('typ').innerHTML = `
+            <option value="Strom">${iconMap.Strom} ${t.strom}</option>
+            <option value="Gas">${iconMap.Gas} ${t.gas}</option>
+            <option value="Wasser">${iconMap.Wasser} ${t.wasser}</option>
+            <option value="Photovoltaik">${iconMap.Photovoltaik} ${t.pv}</option>`;
+        
+        // Filter Bar übersetzen
         const filterBar = document.getElementById('typeFilters');
         filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="setFilter('type', 'Alle')">${t.all}</button>` +
             ["Strom", "Gas", "Wasser", "Photovoltaik"].map(x => `<button class="filter-btn ${filterType === x ? 'active' : ''}" onclick="setFilter('type', '${x}')">${iconMap[x]} ${t[x.toLowerCase() === 'photovoltaik' ? 'pv' : x.toLowerCase()]}</button>`).join('');
@@ -285,19 +292,15 @@
         const yS = document.getElementById('yearSelect'); yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
         years.forEach(y => { yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; });
 
-        // Stats & Charts - NEU: Nutzt jetzt den automatischen Mehrverbrauch
+        // Stats & Charts
         const types = ["Strom", "Gas", "Wasser", "Photovoltaik"];
         const curStands = [], prevStands = [], barColors = [];
         let statsHtml = "";
 
         types.forEach(tk => {
-            // Hol den aktuellsten Eintrag für diesen Typ
             const lastEntry = dataCache.filter(d => d.typ === tk).pop();
-            
             const s25 = lastEntry ? lastEntry.stand : 0;
             const s24 = dataCache.filter(d => d.typ === tk && d.jahr === 2024).pop()?.stand || 0;
-            
-            // Hier nutzen wir den 'vergleich' Wert aus deinem neuen Google Script!
             const cons = lastEntry && lastEntry.vergleich ? lastEntry.vergleich : 0;
 
             curStands.push(s25); 
@@ -306,21 +309,22 @@
 
             statsHtml += `
                 <div class="stat-item">
-                    <span style="font-size:9px;">${iconMap[tk]} ${tk}</span>
+                    <span style="font-size:9px;">${iconMap[tk]} ${t[tk.toLowerCase() === 'photovoltaik' ? 'pv' : tk.toLowerCase()]}</span>
                     <span class="stat-val" style="color:${cons > 0 ? 'var(--up)' : 'var(--down)'}">
                         ${cons > 0 ? '+' : ''}${cons.toFixed(1)} ${units[tk]}
                     </span>
-                    <small style="font-size:8px; color:var(--muted)">vs. Vorperiode</small>
+                    <small style="font-size:8px; color:var(--muted)">${t.vs}</small>
                 </div>`;
         });
         document.getElementById('yearStats').innerHTML = statsHtml;
 
+        // Historie
         const hist = document.getElementById('history'); hist.innerHTML = "";
         let fil = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear));
         [...fil].reverse().forEach(e => {
             hist.innerHTML += `<div class="entry">
                 <div class="entry-icon-wrap">${iconMap[e.typ]}</div>
-                <div class="entry-main"><b>${e.typ}</b><br><small>${formatDate(e.datum)}</small></div>
+                <div class="entry-main"><b>${t[e.typ.toLowerCase() === 'photovoltaik' ? 'pv' : e.typ.toLowerCase()]}</b><br><small>${formatDate(e.datum)}</small></div>
                 <div class="entry-right">
                     <div class="entry-val">${e.stand.toLocaleString()} ${units[e.typ]}</div>
                     ${e.img ? `<img src="${e.img}" class="img-preview" onclick="const w=window.open(); w.document.write('<img src=${e.img} style=width:100%>')">` : ''}
@@ -332,7 +336,7 @@
 
         if(window.ch) window.ch.destroy();
         window.ch = new Chart(document.getElementById('myChart'), {
-            type: 'bar', data: { labels: types, datasets: [{ label: "2024", data: prevStands, backgroundColor: '#475569' }, { label: "2025", data: curStands, backgroundColor: barColors }] },
+            type: 'bar', data: { labels: types.map(x => t[x.toLowerCase() === 'photovoltaik' ? 'pv' : x.toLowerCase()]), datasets: [{ label: "2024", data: prevStands, backgroundColor: '#475569' }, { label: "2025", data: curStands, backgroundColor: barColors }] },
             options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
