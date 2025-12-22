@@ -16,10 +16,12 @@
             --p-strom: #3b82f6; --p-gas: #ef4444; --p-wasser: #0ea5e9; --p-pv: #f59e0b;
             --up: #ef4444; --down: #10b981;
             --input-text: #ffffff;
+            --scheme: dark;
         }
         body.light-mode {
             --bg: #f1f5f9; --card: #ffffff; --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
             --input-text: #0f172a;
+            --scheme: light;
         }
         body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; font-size: 13px; transition: 0.2s; overflow-x: hidden; }
         .container { max-width: 950px; margin: 0 auto; }
@@ -34,11 +36,12 @@
             gap: 10px;
         }
 
-        /* Mobile Header Optimierung */
         @media (max-width: 600px) {
             header { flex-direction: column; text-align: center; }
-            .header-left, .header-right { align-items: center; text-align: center; width: 100%; }
-            .addr-text { align-items: center; margin-top: 5px; }
+            .header-center { order: 1; width: 100%; margin-bottom: 15px; }
+            .header-left { order: 2; width: 100%; align-items: center; margin-bottom: 10px; }
+            .header-right { order: 3; width: 100%; align-items: center; }
+            .addr-text { align-items: center; text-align: center; margin-top: 5px; }
             .grid { grid-template-columns: 1fr; }
         }
 
@@ -50,13 +53,21 @@
         .addr-text { color: var(--muted); font-size: 11px; display: flex; flex-direction: column; line-height: 1.4; margin-top: 10px; }
 
         .logo-container { display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .logo-img { max-height: 45px; width: auto; border-radius: 8px; }
-        .logo-text { font-size: 12px; font-weight: 800; letter-spacing: 2px; margin-top: 5px; color: var(--text); text-transform: uppercase; }
+        .logo-img { max-height: 50px; width: auto; border-radius: 8px; }
+        .logo-text { font-size: 14px; font-weight: 800; letter-spacing: 2px; margin-top: 5px; color: var(--text); text-transform: uppercase; }
 
         .grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 15px; margin-bottom: 20px; }
-        
         .card { background: var(--card); padding: 15px; border-radius: 18px; border: 1px solid var(--border); box-sizing: border-box; }
-        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--input-text); font-size: 14px; margin-top: 4px; outline: none; box-sizing: border-box; -webkit-appearance: none; }
+        
+        input, select { 
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--input-text); font-size: 14px; margin-top: 4px; outline: none; box-sizing: border-box; -webkit-appearance: none; color-scheme: var(--scheme);
+        }
+
+        .select-wrapper { position: relative; }
+        .select-wrapper::after { content: "▾"; position: absolute; right: 12px; top: calc(50% + 2px); transform: translateY(-50%); font-size: 16px; pointer-events: none; color: var(--muted); }
+        .year-wrapper::after { content: "📅 ▾"; font-size: 12px; }
+
+        #yearSelect, #typ { padding-right: 35px; cursor: pointer; }
         
         .file-input-container { position: relative; margin-top: 4px; }
         #foto { opacity: 0; position: absolute; left: 0; top: 0; width: 100%; height: 100%; cursor: pointer; z-index: 2; }
@@ -65,24 +76,30 @@
         label { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-top: 10px; }
         .btn-save { background: var(--p-strom); color: white; width: 100%; padding: 14px; margin-top: 12px; font-size: 14px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; }
 
+        .legend-box { margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .legend-item { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .stat-item { padding: 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); text-align: center; }
-        .stat-val { font-weight: 800; font-size: 16px; display: block; margin-top: 4px; }
+        .stat-val { font-weight: 800; font-size: 13px; display: block; margin-top: 4px; }
+        .stat-unit { font-size: 9px; opacity: 0.7; margin-left: 2px; }
         
-        /* History Mobile View */
-        .entry { background: var(--card); padding: 12px; border-radius: 15px; margin-bottom: 8px; display: flex; align-items: center; border: 1px solid var(--border); gap: 10px; }
-        .entry-icon-wrap { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: rgba(128,128,128,0.1); flex-shrink: 0; }
-        .entry-main { flex: 1; min-width: 0; }
-        .entry-main b { font-size: 14px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .entry-right { display: flex; align-items: center; gap: 8px; }
+        /* History Layout Update */
+        .entry { background: var(--card); padding: 10px 12px; border-radius: 15px; margin-bottom: 8px; display: flex; align-items: center; border: 1px solid var(--border); gap: 12px; }
+        .entry-icon-wrap { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: rgba(128,128,128,0.1); flex-shrink: 0; }
+        .entry-content { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .entry-info { flex: 1; min-width: 0; }
+        .entry-info b { font-size: 14px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .entry-info small { font-size: 10px; color: var(--muted); display: block; }
         
-        .img-preview { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); }
-        .btn-action { padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-size: 16px; color: white; display: flex; align-items: center; justify-content: center; }
+        .entry-right { display: flex; align-items: center; gap: 6px; }
+        .img-preview { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; flex-shrink: 0; }
+        .btn-action { width: 34px; height: 34px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .btn-edit { background: #64748b; }
         .btn-delete { background: #ef4444; }
 
         .filter-bar { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0; margin-bottom: 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-        .filter-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--muted); white-space: nowrap; font-size: 12px; font-weight: 600; }
+        .filter-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--muted); white-space: nowrap; font-size: 12px; font-weight: 600; cursor: pointer; }
         .filter-btn.active { background: var(--p-strom); color: white; border-color: var(--p-strom); }
 
         .btn-lang { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 700; cursor: pointer; }
@@ -120,7 +137,12 @@
         <div class="card">
             <h3 id="l-newEntry">✨ Neuer Wert</h3>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div><label id="l-typeLabel">Typ</label><select id="typ"></select></div>
+                <div>
+                    <label id="l-typeLabel">Typ</label>
+                    <div class="select-wrapper">
+                        <select id="typ"></select>
+                    </div>
+                </div>
                 <div><label id="l-standLabel">Stand</label><input type="number" id="stand" step="0.01" placeholder="0,00"></div>
             </div>
             <label id="l-dateLabel">Datum</label>
@@ -132,6 +154,7 @@
             </div>
             <input type="hidden" id="editId">
             <button class="btn-save" onclick="saveData()" id="l-saveBtn">✅ Speichern</button>
+            <div class="legend-box" id="legend"></div>
         </div>
 
         <div class="card">
@@ -145,7 +168,9 @@
         <div id="l-histTitle" style="font-weight:800; margin-bottom:12px; font-size:15px;">📂 History</div>
         <div id="typeFilters" class="filter-bar"></div>
         <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-            <select id="yearSelect" onchange="setFilter('year', this.value)" style="flex: 2; margin-top:0;"></select>
+            <div class="select-wrapper year-wrapper" style="flex:2;">
+                <select id="yearSelect" onchange="setFilter('year', this.value)"></select>
+            </div>
             <button onclick="exportPDF()" style="flex:1; background:#ef4444; border:none; border-radius:8px; color:white; font-weight:700;">PDF</button>
             <button onclick="exportExcel()" style="flex:1; background:#10b981; border:none; border-radius:8px; color:white; font-weight:700;">XLS</button>
         </div>
@@ -158,14 +183,14 @@
     let dataCache = [], filterType = "Alle", filterYear = "Alle", currentLang = "DE";
 
     const translations = {
-        DE: { dashboard: "📊 Dashboard", newEntry: "✨ Neuer Wert", typeLabel: "Typ", standLabel: "Stand", dateLabel: "Datum", photoLabel: "Foto", saveBtn: "✅ Speichern", updateBtn: "🔄 Update", compareTitle: "📊 Vergleich", all: "Alle", allYears: "Alle Jahre", strom: "Strom", gas: "Gas", wasser: "Wasser", pv: "PV", histTitle: "📂 History", vs: "vs. 2024", fileSelect: "📸 Datei wählen...", alertMiss: "Stand fehlt!", confirmDel: "Löschen?" },
-        IT: { dashboard: "📊 Dashboard", newEntry: "✨ Nuovo valore", typeLabel: "Tipo", standLabel: "Lettura", dateLabel: "Data", photoLabel: "Foto", saveBtn: "✅ Salva", updateBtn: "🔄 Update", compareTitle: "📊 Confronto", all: "Tutti", allYears: "Tutti", strom: "Elettr.", gas: "Gas", wasser: "Acqua", pv: "PV", histTitle: "📂 Cronologia", vs: "vs. 2024", fileSelect: "📸 Scegli file...", alertMiss: "Manca lettura!", confirmDel: "Eliminare?" }
+        DE: { dashboard: "📊 Dashboard", newEntry: "✨ Neuer Wert", typeLabel: "Typ", standLabel: "Stand", dateLabel: "Datum", photoLabel: "Foto", saveBtn: "✅ Speichern", updateBtn: "🔄 Update", compareTitle: "📊 Vergleich", all: "Alle", allYears: "Alle Jahre", strom: "Strom", gas: "Gas", wasser: "Wasser", pv: "Photovoltaik", histTitle: "📂 History", vs: "vs. Vorjahr", fileSelect: "📸 Datei wählen...", alertMiss: "Stand fehlt!", confirmDel: "Löschen?", edit: "Bearbeiten", delete: "Löschen", zoom: "Bild vergrößern" },
+        IT: { dashboard: "📊 Dashboard", newEntry: "✨ Nuovo valore", typeLabel: "Tipo", standLabel: "Lettura", dateLabel: "Data", photoLabel: "Foto", saveBtn: "✅ Salva", updateBtn: "🔄 Update", compareTitle: "📊 Confronto", all: "Tutti", allYears: "Tutti", strom: "Elettr.", gas: "Gas", wasser: "Acqua", pv: "Fotovoltaico", histTitle: "📂 Cronologia", vs: "vs. prec.", fileSelect: "📸 Scegli file...", alertMiss: "Manca lectura!", confirmDel: "Eliminare?", edit: "Modifica", delete: "Elimina", zoom: "Ingrandisci immagine" }
     };
 
     const iconMap = { "Strom": "⚡", "Gas": "🔥", "Wasser": "💧", "Photovoltaik": "☀️" }, units = { "Strom": "kWh", "Gas": "m³", "Wasser": "m³", "Photovoltaik": "kWh" };
 
     function setLang(l) { currentLang = l; render(); }
-    function toggleLight() { document.body.classList.toggle('light-mode'); }
+    function toggleLight() { document.body.classList.toggle('light-mode'); render(); }
     function setFilter(c, v) { if(c === 'type') filterType = v; else filterYear = v; render(); }
     function handleFileSelect(input) { document.getElementById('l-fileLabel').innerText = input.files.length > 0 ? input.files[0].name : translations[currentLang].fileSelect; }
     function formatDate(d) { return new Date(d).toLocaleDateString(currentLang === 'DE' ? 'de-DE' : 'it-IT'); }
@@ -200,34 +225,51 @@
         document.getElementById('btn-it').classList.toggle('active', currentLang === 'IT');
 
         document.getElementById('typ').innerHTML = `<option value="Strom">${iconMap.Strom} ${t.strom}</option><option value="Gas">${iconMap.Gas} ${t.gas}</option><option value="Wasser">${iconMap.Wasser} ${t.wasser}</option><option value="Photovoltaik">${iconMap.Photovoltaik} ${t.pv}</option>`;
-        
+        document.getElementById('legend').innerHTML = `<div class="legend-item"><span>${iconMap.Strom}</span> ${t.strom}</div><div class="legend-item"><span>${iconMap.Gas}</span> ${t.gas}</div><div class="legend-item"><span>${iconMap.Wasser}</span> ${t.wasser}</div><div class="legend-item"><span>${iconMap.Photovoltaik}</span> ${t.pv}</div>`;
+
         const filterBar = document.getElementById('typeFilters');
-        filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="setFilter('type', 'Alle')">${t.all}</button>` +
-            ["Strom", "Gas", "Wasser", "Photovoltaik"].map(x => `<button class="filter-btn ${filterType === x ? 'active' : ''}" onclick="setFilter('type', '${x}')">${iconMap[x]}</button>`).join('');
+        filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="setFilter('type', 'Alle')" title="${t.all}">${t.all}</button>` +
+            [["Strom", t.strom], ["Gas", t.gas], ["Wasser", t.wasser], ["Photovoltaik", t.pv]].map(x => 
+                `<button class="filter-btn ${filterType === x[0] ? 'active' : ''}" onclick="setFilter('type', '${x[0]}')" title="${x[1]}">${iconMap[x[0]]}</button>`
+            ).join('');
         
         const years = [...new Set(dataCache.map(d => d.jahr))].sort((a,b) => b-a);
-        const yS = document.getElementById('yearSelect'); yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
+        const yS = document.getElementById('yearSelect'); 
+        yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
         years.forEach(y => { yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; });
 
-        const types = ["Strom", "Gas", "Wasser", "Photovoltaik"], curStands = [], barColors = [], chartLabels = [];
+        const latestYear = years.length > 0 ? years[0] : new Date().getFullYear();
+        const previousYear = latestYear - 1;
+
+        const types = ["Strom", "Gas", "Wasser", "Photovoltaik"];
+        const curStands = [], prevStands = [], chartLabels = [];
         let statsHtml = "";
 
         types.forEach(tk => {
-            const lastEntry = dataCache.filter(d => d.typ === tk).pop();
-            const s25 = lastEntry ? lastEntry.stand : 0;
-            const cons = lastEntry && lastEntry.vergleich ? lastEntry.vergleich : 0;
-            curStands.push(s25); barColors.push(cons > 0 ? '#ef4444' : '#10b981');
+            const entries = dataCache.filter(d => d.typ === tk);
+            const lastEntry = entries[entries.length - 1];
+            const currentVal = lastEntry ? lastEntry.stand : 0;
+            const diff = lastEntry && lastEntry.vergleich ? lastEntry.vergleich : 0;
+            const previousVal = currentVal - diff; 
+            curStands.push(currentVal); prevStands.push(previousVal);
             chartLabels.push(iconMap[tk]);
-            statsHtml += `<div class="stat-item"><span style="font-size:10px;">${iconMap[tk]}</span><span class="stat-val" style="color:${cons > 0 ? 'var(--up)' : 'var(--down)'}">${cons > 0 ? '+' : ''}${cons.toFixed(1)}</span></div>`;
+            const u = units[tk];
+            statsHtml += `<div class="stat-item" title="${tk}"><span style="font-size:10px;">${iconMap[tk]}</span><span class="stat-val" style="color:${diff > 0 ? 'var(--up)' : 'var(--down)'}">${diff > 0 ? '+' : ''}${diff.toFixed(1)}<span class="stat-unit">${u}</span></span></div>`;
         });
         document.getElementById('yearStats').innerHTML = statsHtml;
 
         const hist = document.getElementById('history'); hist.innerHTML = "";
         let fil = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear));
+        
         [...fil].reverse().forEach(e => {
             hist.innerHTML += `<div class="entry">
                 <div class="entry-icon-wrap">${iconMap[e.typ]}</div>
-                <div class="entry-main"><b>${e.stand} ${units[e.typ]}</b><small>${formatDate(e.datum)}</small></div>
+                <div class="entry-content">
+                    <div class="entry-info">
+                        <b>${e.stand} ${units[e.typ]}</b>
+                        <small>${formatDate(e.datum)}</small>
+                    </div>
+                </div>
                 <div class="entry-right">
                     ${e.img ? `<img src="${e.img}" class="img-preview" onclick="window.open().document.write('<img src=${e.img} style=width:100%>')">` : ''}
                     <button class="btn-action btn-edit" onclick="editEntry(${e.id})">✏️</button>
@@ -238,8 +280,30 @@
 
         if(window.ch) window.ch.destroy();
         window.ch = new Chart(document.getElementById('myChart'), {
-            type: 'bar', data: { labels: chartLabels, datasets: [{ data: curStands, backgroundColor: barColors }] },
-            options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            type: 'bar', data: { labels: chartLabels, datasets: [
+                { label: previousYear.toString(), data: prevStands, backgroundColor: '#64748b', borderRadius: 5 }, 
+                { label: latestYear.toString(), data: curStands, backgroundColor: '#3b82f6', borderRadius: 5 }
+            ] },
+            options: { 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { display: true, labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const val = context.parsed.y;
+                                const typeKey = types[context.dataIndex];
+                                return `${label}: ${val} ${units[typeKey]}`;
+                            }
+                        }
+                    }
+                },
+                scales: { 
+                    y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }, 
+                    x: { ticks: { color: '#94a3b8', font: { size: 14 } }, grid: { display: false } } 
+                }
+            }
         });
     }
 
@@ -262,12 +326,13 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         doc.text("Report", 14, 20);
-        doc.autoTable({ head: [['Datum', 'Typ', 'Stand']], body: dataCache.map(e => [formatDate(e.datum), e.typ, e.stand]) });
+        doc.autoTable({ head: [['Datum', 'Typ', 'Stand']], body: dataCache.map(e => [formatDate(e.datum), e.typ, `${e.stand} ${units[e.typ]}`]) });
         doc.save("Zaehler_Report.pdf");
     }
 
     function exportExcel() {
-        const ws = XLSX.utils.json_to_sheet(dataCache);
+        const exportData = dataCache.map(e => ({ ...e, Stand: `${e.stand} ${units[e.typ]}` }));
+        const ws = XLSX.utils.json_to_sheet(exportData);
         const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Daten");
         XLSX.writeFile(wb, "Zaehler_Export.xlsx");
     }
