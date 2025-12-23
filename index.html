@@ -196,7 +196,17 @@
     function setLang(l) { currentLang = l; render(); }
     function toggleLight() { document.body.classList.toggle('light-mode'); render(); }
     function setFilter(c, v) { if(c === 'type') filterType = v; else filterYear = v; render(); }
-    function handleFileSelect(input) { document.getElementById('l-fileLabel').innerText = input.files.length > 0 ? input.files[0].name : translations[currentLang].fileSelect; }
+    
+    // VERBESSERTE DATEIAUSWAHL-FUNKTION
+    function handleFileSelect(input) { 
+        const label = document.getElementById('l-fileLabel');
+        if (input.files.length > 0) {
+            label.innerText = "📄 " + input.files[0].name; 
+        } else {
+            label.innerText = translations[currentLang].fileSelect;
+        }
+    }
+
     function formatDate(d) { return new Date(d).toLocaleDateString(currentLang === 'DE' ? 'de-DE' : 'it-IT'); }
 
     async function loadFromCloud() {
@@ -225,6 +235,12 @@
         document.getElementById('l-compareTitle').innerText = t.compareTitle;
         document.getElementById('l-histTitle').innerText = t.histTitle;
         
+        // ÜBERSETZUNG FÜR DATEIAUSWAHL AKTUALISIEREN
+        const fileInput = document.getElementById('foto');
+        if (fileInput.files.length === 0) {
+            document.getElementById('l-fileLabel').innerText = t.fileSelect;
+        }
+
         document.getElementById('btn-de').classList.toggle('active', currentLang === 'DE');
         document.getElementById('btn-it').classList.toggle('active', currentLang === 'IT');
 
@@ -242,9 +258,9 @@
         yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
         years.forEach(y => { yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; });
 
+        // ... restliche Chart & History Logik (unverändert) ...
         const latestYear = years.length > 0 ? years[0] : new Date().getFullYear();
         const previousYear = latestYear - 1;
-
         const types = ["Strom", "Gas", "Wasser", "Photovoltaik"];
         const curStands = [], prevStands = [], chartLabels = [];
         let statsHtml = "";
@@ -282,6 +298,7 @@
             </div>`;
         });
 
+        // Chart Update Logik hier belassen...
         if(window.ch) window.ch.destroy();
         window.ch = new Chart(document.getElementById('myChart'), {
             type: 'bar', data: { labels: chartLabels, datasets: [
