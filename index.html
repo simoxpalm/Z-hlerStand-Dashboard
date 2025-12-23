@@ -242,24 +242,24 @@ function render() {
     document.getElementById('l-compareTitle').innerText = t.compareTitle;
     document.getElementById('l-histTitle').innerText = t.histTitle;
 
-    // --- 2. Dropdowns ---
+    // --- 2. Fix: Typ-Auswahl Dropdown (Wichtig für neue Einträge!) ---
     const typeSelect = document.getElementById('typ');
     if (typeSelect) {
+        // Wir speichern den aktuell gewählten Wert, damit er beim Neuzeichnen nicht springt
+        const currentSelection = typeSelect.value;
         typeSelect.innerHTML = `
             <option value="Strom">${iconMap.Strom} ${t.strom}</option>
             <option value="Gas">${iconMap.Gas} ${t.gas}</option>
             <option value="Wasser">${iconMap.Wasser} ${t.wasser}</option>
             <option value="Photovoltaik">${iconMap.Photovoltaik} ${t.pv}</option>`;
+        if (currentSelection) typeSelect.value = currentSelection;
     }
     
-    if (document.getElementById('foto').files.length === 0) {
-        document.getElementById('l-fileLabel').innerText = t.fileSelect;
-    }
-
+    // Sprach-Buttons
     document.getElementById('btn-de').classList.toggle('active', currentLang === 'DE');
     document.getElementById('btn-it').classList.toggle('active', currentLang === 'IT');
 
-    // --- 3. Filter-Leiste ---
+    // --- 3. Filter-Leiste (Historie) ---
     const filterBar = document.getElementById('typeFilters');
     if (filterBar) {
         filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="historySichtbar=true; setFilter('type', 'Alle')">${t.all}</button>` +
@@ -270,7 +270,7 @@ function render() {
             ).join('');
     }
 
-    // Jahres-Dropdown
+    // Jahres-Dropdown (Historie)
     const years = [...new Set(dataCache.map(d => parseInt(d.jahr)))].sort((a,b) => b-a);
     const yS = document.getElementById('yearSelect'); 
     if (yS) {
@@ -279,11 +279,10 @@ function render() {
         yS.onchange = (e) => { historySichtbar = true; setFilter('year', e.target.value); };
     }
 
-    // --- 4. Statistik & Farblogik ---
+    // --- 4. Statistik Logik ---
     const allYearsInData = dataCache.map(d => parseInt(d.jahr));
     const curYear = allYearsInData.length > 0 ? Math.max(...allYearsInData) : new Date().getFullYear();
     const prevYear = curYear - 1;
-    const oldYear = curYear - 2;
 
     let statsHtml = "";
     const types = ["Strom", "Gas", "Wasser", "Photovoltaik"];
@@ -291,51 +290,54 @@ function render() {
 
     types.forEach(tk => {
         const entries = dataCache.filter(d => d.typ === tk).sort((a,b) => a.ts - b.ts);
+        const latestEntry = (entries.length > 0) ? entries[entries.length - 1] : null;
+        const standNow = latestEntry ? latestEntry.stand : 0;
+
         const getEndStand = (year) => {
             const yearEntries = entries.filter(d => d.jahr <= year);
             return yearEntries.length > 0 ? yearEntries[yearEntries.length - 1].stand : null;
         };
-        const latestEntry = (entries.length > 0) ? entries[entries.length - 1] : null;
-        const standNow = latestEntry ? latestEntry.stand : 0;
         const standEndPrev = getEndStand(prevYear);
-        const standEndOld = getEndStand(oldYear);
+        const standEndOld = getEndStand(curYear - 2);
         
         const consumptionCurYear = (standEndPrev !== null && latestEntry && latestEntry.jahr == curYear) ? (standNow - standEndPrev) : 0;
         const consumptionPrevYear = (standEndPrev !== null && standEndOld !== null) ? (standEndPrev - standEndOld) : 0;
         const diff = consumptionCurYear - consumptionPrevYear;
 
-        // FARBEN DIREKT DEFINIEREN (HEX-CODES)
         const ROT = "#ef4444";
         const GRUEN = "#22c55e";
         const NEUTRAL = "#94a3b8";
 
         let finalColor = NEUTRAL;
         let trendEmoji = "➡️ ";
+        let displayedNumber = 0;
 
         if (diff > 0) {
-            trendEmoji = "📈 +";
-            // Mehrverbrauch: Strom/Gas/Wasser = Rot, PV = Grün
+            trendEmoji = "📈 ";
             finalColor = (tk === "Photovoltaik") ? GRUEN : ROT;
         } else if (diff < 0) {
             trendEmoji = "📉 ";
-            // Wenigerverbrauch: Strom/Gas/Wasser = Grün, PV = Rot
             finalColor = (tk === "Photovoltaik") ? ROT : GRUEN;
         }
+
+        // PV zeigt Realwert, andere zeigen Differenz
+        displayedNumber = (tk === "Photovoltaik") ? consumptionCurYear : diff;
 
         statsHtml += `
             <div class="stat-item">
                 <span style="font-size:10px;">${iconMap[tk]}</span>
-                <span class="stat-val" style="color:${finalColor}">${trendEmoji}${diff.toFixed(2)}</span>
+                <span class="stat-val" style="color:${finalColor}">${trendEmoji}${displayedNumber.toFixed(0)}</span>
                 <div style="font-size:8px; color:var(--muted); opacity:0.8; margin-top:2px;">
                     ${curYear}: <b>${consumptionCurYear.toFixed(0)}</b> vs ${prevYear}: <b>${consumptionPrevYear.toFixed(0)}</b>
                 </div>
             </div>`;
+
         chartDataCurrent.push(consumptionCurYear);
         chartDataPrevious.push(consumptionPrevYear);
     });
     document.getElementById('yearStats').innerHTML = statsHtml;
 
-    // --- 5. History ---
+    // --- 5. Historie Liste ---
     const hist = document.getElementById('history'); 
     hist.innerHTML = "";
     if (historySichtbar) {
@@ -344,7 +346,7 @@ function render() {
             hist.innerHTML += `<div class="entry"><div class="entry-icon-wrap">${iconMap[e.typ]}</div><div class="entry-content"><b>${e.stand} ${units[e.typ]}</b><br><small>${formatDate(e.datum)}</small></div><div class="entry-right">${e.img ? `<img src="${e.img}" class="img-preview" onclick="window.open().document.write('<img src=${e.img} style=width:100%>')">` : ''}<button class="btn-action btn-edit" onclick="editEntry(${e.id})">✏️</button><button class="btn-action btn-delete" onclick="deleteEntry(${e.id})">🗑️</button></div></div>`;
         });
     } else {
-        hist.innerHTML = `<div style="text-align:center; color:var(--muted); padding:30px; font-size: 0.9em;">${currentLang === 'DE' ? 'Wähle einen Filter aus' : 'Seleziona un filtro'}</div>`;
+        hist.innerHTML = `<div style="text-align:center; color:var(--muted); padding:30px;">${currentLang === 'DE' ? 'Wähle einen Filter aus' : 'Seleziona un filtro'}</div>`;
     }
 
     // --- 6. Diagramm ---
@@ -356,11 +358,11 @@ function render() {
             data: { 
                 labels: types.map(t => iconMap[t]), 
                 datasets: [
-                    { label: 'Verbrauch ' + prevYear, data: chartDataPrevious, backgroundColor: '#64748b', borderRadius: 5 },
-                    { label: 'Verbrauch ' + curYear, data: chartDataCurrent, backgroundColor: '#3b82f6', borderRadius: 5 }
+                    { label: prevYear, data: chartDataPrevious, backgroundColor: '#64748b', borderRadius: 5 },
+                    { label: curYear, data: chartDataCurrent, backgroundColor: '#3b82f6', borderRadius: 5 }
                 ] 
             },
-            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: { ticks: { color: '#94a3b8' } } } }
+            options: { maintainAspectRatio: false }
         });
     }
 }
