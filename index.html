@@ -228,24 +228,19 @@
     function render() {
         const t = translations[currentLang];
         
-        // --- 1. Texte für Labels & Eingabefelder ---
+        // --- 1. UI Texte & Placeholder ---
         document.getElementById('l-dashboard').innerText = t.dashboard;
         document.getElementById('l-newEntry').innerText = t.newEntry;
         document.getElementById('l-typeLabel').innerText = t.typeLabel;
         document.getElementById('l-standLabel').innerText = t.standLabel;
         document.getElementById('l-dateLabel').innerText = t.dateLabel;
         document.getElementById('l-photoLabel').innerText = t.photoLabel;
-        
-        // Eingabefeld Placeholder
         document.getElementById('stand').placeholder = t.standLabel + "..."; 
-        
-        // Speicher-Button Text
         document.getElementById('l-saveBtn').innerText = document.getElementById('editId').value ? t.updateBtn : t.saveBtn;
-        
         document.getElementById('l-compareTitle').innerText = t.compareTitle;
         document.getElementById('l-histTitle').innerText = t.histTitle;
 
-        // --- 2. DROPDOWN-MENÜ FÜLLEN (WICHTIG!) ---
+        // --- 2. Dropdown-Menü (Typ-Auswahl) ---
         const typeSelect = document.getElementById('typ');
         if (typeSelect) {
             typeSelect.innerHTML = `
@@ -255,42 +250,28 @@
                 <option value="Photovoltaik">${iconMap.Photovoltaik} ${t.pv}</option>`;
         }
         
-        // Foto-Auswahl Text
         if (document.getElementById('foto').files.length === 0) {
             document.getElementById('l-fileLabel').innerText = t.fileSelect;
         }
 
-        // Sprach-Buttons aktiv setzen
         document.getElementById('btn-de').classList.toggle('active', currentLang === 'DE');
         document.getElementById('btn-it').classList.toggle('active', currentLang === 'IT');
 
-        // --- 3. Filter & Symbole (Legende) unter dem Speicher-Button ---
+        // --- 3. Filter & Symbole unter Speicher-Button ---
         const filterBar = document.getElementById('typeFilters');
         if (filterBar) {
             filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="setFilter('type', 'Alle')">${t.all}</button>` +
-                [
-                    ["Strom", t.strom], 
-                    ["Gas", t.gas], 
-                    ["Wasser", t.wasser], 
-                    ["Photovoltaik", t.pv]
-                ].map(x => 
+                [["Strom", t.strom], ["Gas", t.gas], ["Wasser", t.wasser], ["Photovoltaik", t.pv]].map(x => 
                     `<button class="filter-btn ${filterType === x[0] ? 'active' : ''}" onclick="setFilter('type', '${x[0]}')">
                         ${iconMap[x[0]]} <span style="font-size:10px;">${x[1]}</span>
                     </button>`
                 ).join('');
         }
 
-        // Jahres-Auswahl Dropdown
-        const years = [...new Set(dataCache.map(d => d.jahr))].sort((a,b) => b-a);
-        const yS = document.getElementById('yearSelect'); 
-        if (yS) {
-            yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
-            years.forEach(y => { yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; });
-        }
-
-        // --- 4. Jahresvergleich Kalkulation (2025 vs 2024) ---
-        const now = new Date();
-        const curYear = now.getFullYear();
+        // --- 4. Dynamische Jahres-Erkennung & Kalkulation ---
+        // Findet das höchste Jahr in den Daten (z.B. 2026)
+        const allYearsInData = dataCache.map(d => parseInt(d.jahr));
+        const curYear = allYearsInData.length > 0 ? Math.max(...allYearsInData) : new Date().getFullYear();
         const prevYear = curYear - 1;
         const oldYear = curYear - 2;
 
@@ -300,17 +281,25 @@
 
         types.forEach(tk => {
             const entries = dataCache.filter(d => d.typ === tk).sort((a,b) => a.ts - b.ts);
+            
             const getEndStand = (year) => {
                 const yearEntries = entries.filter(d => d.jahr <= year);
                 return yearEntries.length > 0 ? yearEntries[yearEntries.length - 1].stand : null;
             };
 
-            const standNow = entries.length > 0 ? entries[entries.length - 1].stand : 0;
+            const latestEntry = entries.length > 0 ? entries[entries.length - 1] : null;
+            const standNow = latestEntry ? latestEntry.stand : 0;
             const standEndPrev = getEndStand(prevYear);
             const standEndOld = getEndStand(oldYear);
 
-            const consumptionCurYear = (standEndPrev !== null) ? (standNow - standEndPrev) : 0;
-            const consumptionPrevYear = (standEndPrev !== null && standEndOld !== null) ? (standEndPrev - standEndOld) : 0;
+            // Verbrauch im "aktuellen" Jahr (z.B. 2026)
+            const consumptionCurYear = (standEndPrev !== null && latestEntry && latestEntry.jahr == curYear) 
+                                       ? (standNow - standEndPrev) : 0;
+            
+            // Verbrauch im Vorjahr (z.B. 2025)
+            const consumptionPrevYear = (standEndPrev !== null && standEndOld !== null) 
+                                        ? (standEndPrev - standEndOld) : 0;
+            
             const diff = consumptionCurYear - consumptionPrevYear;
 
             let color = "var(--text)";
@@ -323,8 +312,8 @@
                     <span class="stat-val" style="color:${color}">
                         ${diff > 0 ? '📈 +' : '📉 '}${diff.toFixed(2)}
                     </span>
-                    <div style="font-size:8px; color:var(--muted); opacity:0.7;">
-                        '${curYear.toString().slice(-2)}: ${consumptionCurYear.toFixed(0)} vs '${prevYear.toString().slice(-2)}: ${consumptionPrevYear.toFixed(0)}
+                    <div style="font-size:8px; color:var(--muted); opacity:0.8; margin-top:2px;">
+                        ${curYear}: <b>${consumptionCurYear.toFixed(0)}</b> vs ${prevYear}: <b>${consumptionPrevYear.toFixed(0)}</b>
                     </div>
                 </div>`;
             
@@ -342,10 +331,7 @@
             hist.innerHTML += `
             <div class="entry">
                 <div class="entry-icon-wrap">${iconMap[e.typ]}</div>
-                <div class="entry-content">
-                    <b>${e.stand} ${units[e.typ]}</b><br>
-                    <small>${formatDate(e.datum)}</small>
-                </div>
+                <div class="entry-content"><b>${e.stand} ${units[e.typ]}</b><br><small>${formatDate(e.datum)}</small></div>
                 <div class="entry-right">
                     ${e.img ? `<img src="${e.img}" class="img-preview" onclick="window.open().document.write('<img src=${e.img} style=width:100%>')">` : ''}
                     <button class="btn-action btn-edit" onclick="editEntry(${e.id})">✏️</button>
