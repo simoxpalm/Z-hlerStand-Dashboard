@@ -230,19 +230,24 @@
 function render() {
     const t = translations[currentLang];
     
-    // --- 1. UI Texte & Placeholder ---
+    // --- 1. UI Texte & Platzhalter ---
     document.getElementById('l-dashboard').innerText = t.dashboard;
     document.getElementById('l-newEntry').innerText = t.newEntry;
     document.getElementById('l-typeLabel').innerText = t.typeLabel;
     document.getElementById('l-standLabel').innerText = t.standLabel;
     document.getElementById('l-dateLabel').innerText = t.dateLabel;
     document.getElementById('l-photoLabel').innerText = t.photoLabel;
+    
+    // Eingabefeld Placeholder
     document.getElementById('stand').placeholder = t.standLabel + "..."; 
+    
+    // Speicher-Button Text
     document.getElementById('l-saveBtn').innerText = document.getElementById('editId').value ? t.updateBtn : t.saveBtn;
+    
     document.getElementById('l-compareTitle').innerText = t.compareTitle;
     document.getElementById('l-histTitle').innerText = t.histTitle;
 
-    // --- 2. Dropdown-Menü (Typ-Auswahl) ---
+    // --- 2. Typ-Auswahl Dropdown (Neuer Wert) ---
     const typeSelect = document.getElementById('typ');
     if (typeSelect) {
         typeSelect.innerHTML = `
@@ -256,10 +261,11 @@ function render() {
         document.getElementById('l-fileLabel').innerText = t.fileSelect;
     }
 
+    // Sprach-Buttons
     document.getElementById('btn-de').classList.toggle('active', currentLang === 'DE');
     document.getElementById('btn-it').classList.toggle('active', currentLang === 'IT');
 
-    // --- 3. Filter-Leiste (Setzt historySichtbar auf true) ---
+    // --- 3. Filter-Leiste (Symbole & Namen) unter Speicher-Button ---
     const filterBar = document.getElementById('typeFilters');
     if (filterBar) {
         filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="historySichtbar=true; setFilter('type', 'Alle')">${t.all}</button>` +
@@ -270,7 +276,22 @@ function render() {
             ).join('');
     }
 
-    // --- 4. Dynamische Jahres-Erkennung & Statistik ---
+    // --- 4. Jahres-Auswahl Dropdown (History) ---
+    const years = [...new Set(dataCache.map(d => parseInt(d.jahr)))].sort((a,b) => b-a);
+    const yS = document.getElementById('yearSelect'); 
+    if (yS) {
+        yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
+        years.forEach(y => { 
+            yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; 
+        });
+        // Event-Listener für manuelle Auswahl
+        yS.onchange = (e) => {
+            historySichtbar = true;
+            setFilter('year', e.target.value);
+        };
+    }
+
+    // --- 5. Dynamische Jahres-Erkennung & Statistik-Berechnung ---
     const allYearsInData = dataCache.map(d => parseInt(d.jahr));
     const curYear = allYearsInData.length > 0 ? Math.max(...allYearsInData) : new Date().getFullYear();
     const prevYear = curYear - 1;
@@ -290,6 +311,7 @@ function render() {
         const standNow = latestEntry ? latestEntry.stand : 0;
         const standEndPrev = getEndStand(prevYear);
         const standEndOld = getEndStand(oldYear);
+        
         const consumptionCurYear = (standEndPrev !== null && latestEntry && latestEntry.jahr == curYear) ? (standNow - standEndPrev) : 0;
         const consumptionPrevYear = (standEndPrev !== null && standEndOld !== null) ? (standEndPrev - standEndOld) : 0;
         const diff = consumptionCurYear - consumptionPrevYear;
@@ -311,7 +333,7 @@ function render() {
     });
     document.getElementById('yearStats').innerHTML = statsHtml;
 
-    // --- 5. History-Liste (Steuerung über historySichtbar) ---
+    // --- 6. History-Liste ---
     const hist = document.getElementById('history'); 
     hist.innerHTML = "";
     
@@ -335,13 +357,12 @@ function render() {
             });
         }
     } else {
-        // Startbildschirm der History (wenn noch nichts geklickt wurde)
         hist.innerHTML = `<div style="text-align:center; color:var(--muted); padding:30px; font-size: 0.9em;">
             ${currentLang === 'DE' ? 'Wähle einen Filter aus, um die Liste zu öffnen' : 'Seleziona un filtro per aprire la lista'}
         </div>`;
     }
 
-    // --- 6. Diagramm ---
+    // --- 7. Diagramm (Chart.js) Update ---
     const ctx = document.getElementById('myChart');
     if (ctx) {
         if (window.ch) window.ch.destroy();
@@ -354,7 +375,14 @@ function render() {
                     { label: 'Verbrauch ' + curYear, data: chartDataCurrent, backgroundColor: '#3b82f6', borderRadius: 5 }
                 ] 
             },
-            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } } }
+            options: { 
+                maintainAspectRatio: false, 
+                plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
+                scales: { 
+                    y: { beginAtZero: true, ticks: { color: '#94a3b8' } }, 
+                    x: { ticks: { color: '#94a3b8' } } 
+                } 
+            }
         });
     }
 }
