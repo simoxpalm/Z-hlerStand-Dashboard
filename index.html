@@ -230,24 +230,19 @@
 function render() {
     const t = translations[currentLang];
     
-    // --- 1. UI Texte & Platzhalter ---
+    // --- 1. UI Texte ---
     document.getElementById('l-dashboard').innerText = t.dashboard;
     document.getElementById('l-newEntry').innerText = t.newEntry;
     document.getElementById('l-typeLabel').innerText = t.typeLabel;
     document.getElementById('l-standLabel').innerText = t.standLabel;
     document.getElementById('l-dateLabel').innerText = t.dateLabel;
     document.getElementById('l-photoLabel').innerText = t.photoLabel;
-    
-    // Eingabefeld Placeholder
     document.getElementById('stand').placeholder = t.standLabel + "..."; 
-    
-    // Speicher-Button Text
     document.getElementById('l-saveBtn').innerText = document.getElementById('editId').value ? t.updateBtn : t.saveBtn;
-    
     document.getElementById('l-compareTitle').innerText = t.compareTitle;
     document.getElementById('l-histTitle').innerText = t.histTitle;
 
-    // --- 2. Typ-Auswahl Dropdown (Neuer Wert) ---
+    // --- 2. Dropdowns ---
     const typeSelect = document.getElementById('typ');
     if (typeSelect) {
         typeSelect.innerHTML = `
@@ -261,11 +256,10 @@ function render() {
         document.getElementById('l-fileLabel').innerText = t.fileSelect;
     }
 
-    // Sprach-Buttons
     document.getElementById('btn-de').classList.toggle('active', currentLang === 'DE');
     document.getElementById('btn-it').classList.toggle('active', currentLang === 'IT');
 
-    // --- 3. Filter-Leiste (Symbole & Namen) unter Speicher-Button ---
+    // --- 3. Filter-Leiste ---
     const filterBar = document.getElementById('typeFilters');
     if (filterBar) {
         filterBar.innerHTML = `<button class="filter-btn ${filterType === 'Alle' ? 'active' : ''}" onclick="historySichtbar=true; setFilter('type', 'Alle')">${t.all}</button>` +
@@ -276,22 +270,16 @@ function render() {
             ).join('');
     }
 
-    // --- 4. Jahres-Auswahl Dropdown (History) ---
+    // Jahres-Dropdown
     const years = [...new Set(dataCache.map(d => parseInt(d.jahr)))].sort((a,b) => b-a);
     const yS = document.getElementById('yearSelect'); 
     if (yS) {
         yS.innerHTML = `<option value="Alle">${t.allYears}</option>`;
-        years.forEach(y => { 
-            yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; 
-        });
-        // Event-Listener für manuelle Auswahl
-        yS.onchange = (e) => {
-            historySichtbar = true;
-            setFilter('year', e.target.value);
-        };
+        years.forEach(y => { yS.innerHTML += `<option value="${y}" ${filterYear == y ? 'selected' : ''}>${y}</option>`; });
+        yS.onchange = (e) => { historySichtbar = true; setFilter('year', e.target.value); };
     }
 
-    // --- 5. Dynamische Jahres-Erkennung & Statistik-Berechnung ---
+    // --- 4. Statistik & Farblogik ---
     const allYearsInData = dataCache.map(d => parseInt(d.jahr));
     const curYear = allYearsInData.length > 0 ? Math.max(...allYearsInData) : new Date().getFullYear();
     const prevYear = curYear - 1;
@@ -307,7 +295,7 @@ function render() {
             const yearEntries = entries.filter(d => d.jahr <= year);
             return yearEntries.length > 0 ? yearEntries[yearEntries.length - 1].stand : null;
         };
-        const latestEntry = entries.length > 0 ? entries[entries.length - 1] : null;
+        const latestEntry = (entries.length > 0) ? entries[entries.length - 1] : null;
         const standNow = latestEntry ? latestEntry.stand : 0;
         const standEndPrev = getEndStand(prevYear);
         const standEndOld = getEndStand(oldYear);
@@ -316,14 +304,28 @@ function render() {
         const consumptionPrevYear = (standEndPrev !== null && standEndOld !== null) ? (standEndPrev - standEndOld) : 0;
         const diff = consumptionCurYear - consumptionPrevYear;
 
-        let color = "var(--text)";
-        if (diff > 0) color = (tk === "Photovoltaik") ? "var(--down)" : "var(--up)";
-        else if (diff < 0) color = (tk === "Photovoltaik") ? "var(--up)" : "var(--down)";
+        // FARBEN DIREKT DEFINIEREN (HEX-CODES)
+        const ROT = "#ef4444";
+        const GRUEN = "#22c55e";
+        const NEUTRAL = "#94a3b8";
+
+        let finalColor = NEUTRAL;
+        let trendEmoji = "➡️ ";
+
+        if (diff > 0) {
+            trendEmoji = "📈 +";
+            // Mehrverbrauch: Strom/Gas/Wasser = Rot, PV = Grün
+            finalColor = (tk === "Photovoltaik") ? GRUEN : ROT;
+        } else if (diff < 0) {
+            trendEmoji = "📉 ";
+            // Wenigerverbrauch: Strom/Gas/Wasser = Grün, PV = Rot
+            finalColor = (tk === "Photovoltaik") ? ROT : GRUEN;
+        }
 
         statsHtml += `
             <div class="stat-item">
                 <span style="font-size:10px;">${iconMap[tk]}</span>
-                <span class="stat-val" style="color:${color}">${diff > 0 ? '📈 +' : '📉 '}${diff.toFixed(2)}</span>
+                <span class="stat-val" style="color:${finalColor}">${trendEmoji}${diff.toFixed(2)}</span>
                 <div style="font-size:8px; color:var(--muted); opacity:0.8; margin-top:2px;">
                     ${curYear}: <b>${consumptionCurYear.toFixed(0)}</b> vs ${prevYear}: <b>${consumptionPrevYear.toFixed(0)}</b>
                 </div>
@@ -333,36 +335,19 @@ function render() {
     });
     document.getElementById('yearStats').innerHTML = statsHtml;
 
-    // --- 6. History-Liste ---
+    // --- 5. History ---
     const hist = document.getElementById('history'); 
     hist.innerHTML = "";
-    
     if (historySichtbar) {
         let filtered = dataCache.filter(d => (filterType === "Alle" || d.typ === filterType) && (filterYear === "Alle" || d.jahr == filterYear));
-        
-        if (filtered.length === 0) {
-            hist.innerHTML = `<div style="text-align:center; color:var(--muted); padding:20px;">Keine Einträge gefunden</div>`;
-        } else {
-            [...filtered].reverse().forEach(e => {
-                hist.innerHTML += `
-                <div class="entry">
-                    <div class="entry-icon-wrap">${iconMap[e.typ]}</div>
-                    <div class="entry-content"><b>${e.stand} ${units[e.typ]}</b><br><small>${formatDate(e.datum)}</small></div>
-                    <div class="entry-right">
-                        ${e.img ? `<img src="${e.img}" class="img-preview" onclick="window.open().document.write('<img src=${e.img} style=width:100%>')">` : ''}
-                        <button class="btn-action btn-edit" onclick="editEntry(${e.id})">✏️</button>
-                        <button class="btn-action btn-delete" onclick="deleteEntry(${e.id})">🗑️</button>
-                    </div>
-                </div>`;
-            });
-        }
+        [...filtered].reverse().forEach(e => {
+            hist.innerHTML += `<div class="entry"><div class="entry-icon-wrap">${iconMap[e.typ]}</div><div class="entry-content"><b>${e.stand} ${units[e.typ]}</b><br><small>${formatDate(e.datum)}</small></div><div class="entry-right">${e.img ? `<img src="${e.img}" class="img-preview" onclick="window.open().document.write('<img src=${e.img} style=width:100%>')">` : ''}<button class="btn-action btn-edit" onclick="editEntry(${e.id})">✏️</button><button class="btn-action btn-delete" onclick="deleteEntry(${e.id})">🗑️</button></div></div>`;
+        });
     } else {
-        hist.innerHTML = `<div style="text-align:center; color:var(--muted); padding:30px; font-size: 0.9em;">
-            ${currentLang === 'DE' ? 'Wähle einen Filter aus, um die Liste zu öffnen' : 'Seleziona un filtro per aprire la lista'}
-        </div>`;
+        hist.innerHTML = `<div style="text-align:center; color:var(--muted); padding:30px; font-size: 0.9em;">${currentLang === 'DE' ? 'Wähle einen Filter aus' : 'Seleziona un filtro'}</div>`;
     }
 
-    // --- 7. Diagramm (Chart.js) Update ---
+    // --- 6. Diagramm ---
     const ctx = document.getElementById('myChart');
     if (ctx) {
         if (window.ch) window.ch.destroy();
@@ -375,14 +360,7 @@ function render() {
                     { label: 'Verbrauch ' + curYear, data: chartDataCurrent, backgroundColor: '#3b82f6', borderRadius: 5 }
                 ] 
             },
-            options: { 
-                maintainAspectRatio: false, 
-                plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
-                scales: { 
-                    y: { beginAtZero: true, ticks: { color: '#94a3b8' } }, 
-                    x: { ticks: { color: '#94a3b8' } } 
-                } 
-            }
+            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: { ticks: { color: '#94a3b8' } } } }
         });
     }
 }
